@@ -1,51 +1,63 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import React from "react";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { AppSidebar } from "@/components/layout/app-sidebar";
+import { DownloadProvider } from "@/components/download-provider";
+import { DashboardPage } from "@/pages/dashboard";
+import { MirrorPage } from "@/pages/mirror";
+import { LivestreamPage } from "@/pages/livestream";
+import { CameraPage } from "@/pages/camera";
+import { DevicesPage } from "@/pages/devices";
+import { AppsPage } from "@/pages/apps";
+import { FilesPage } from "@/pages/files";
+import { GalleryPage } from "@/pages/gallery";
+import { MonitorPage } from "@/pages/monitor";
+import { LogsPage } from "@/pages/logs";
+import { SettingsPage } from "@/pages/settings";
+import { ShellPage } from "@/pages/shell";
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+// ── Simple hash-based routing for Tauri SPA ──────────────────────
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+const routes: Record<string, { title: string; component: React.FC }> = {
+  "/": { title: "Dashboard", component: DashboardPage },
+  "/streaming/mirror": { title: "Mirror", component: MirrorPage },
+  "/streaming/live": { title: "Livestream", component: LivestreamPage },
+  "/streaming/camera": { title: "Camera", component: CameraPage },
+  "/management/devices": { title: "Devices", component: DevicesPage },
+  "/management/apps": { title: "Apps", component: AppsPage },
+  "/management/files": { title: "Files", component: FilesPage },
+  "/management/gallery": { title: "Gallery", component: GalleryPage },
+  "/system/monitor": { title: "Monitor", component: MonitorPage },
+  "/system/logs": { title: "Logcat", component: LogsPage },
+  "/system/settings": { title: "Settings", component: SettingsPage },
+  "/system/shell": { title: "Interactive Shell", component: ShellPage },
+};
+
+import { useHashRoute } from "@/hooks/use-hash-route";
+
+export function App() {
+  const currentPath = useHashRoute();
+  const route = routes[currentPath] ?? routes["/"];
+  const PageComponent = route.component;
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
-
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+    <TooltipProvider>
+      <DownloadProvider>
+        <SidebarProvider defaultOpen={true}>
+          <AppSidebar />
+          <SidebarInset>
+            <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 sticky top-0 z-50 bg-background">
+              <SidebarTrigger className="-ml-1" />
+              <Separator orientation="vertical" className="mr-2 h-4" />
+              <h1 className="text-sm font-medium">{route.title}</h1>
+            </header>
+            <main className="flex-1 overflow-auto p-6">
+              <PageComponent />
+            </main>
+          </SidebarInset>
+        </SidebarProvider>
+      </DownloadProvider>
+    </TooltipProvider>
   );
 }
-
-export default App;

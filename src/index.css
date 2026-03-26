@@ -3,6 +3,12 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
+/* ── Sidebar-08 overrides ── */
+:root {
+  --sidebar-width: 220px;
+  --sidebar-width-icon: 48px;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

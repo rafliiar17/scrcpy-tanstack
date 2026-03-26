@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "tauri-app",
+  "productName": "ScrcpyGUI Pro",
   "version": "0.1.0",
-  "identifier": "com.archy.tauri-app",
+  "identifier": "com.rafz.scrcpygui-pro",
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
@@ -12,9 +12,13 @@
   "app": {
     "windows": [
       {
-        "title": "tauri-app",
-        "width": 800,
-        "height": 600
+        "title": "ScrcpyGUI Pro",
+        "width": 1020,
+        "height": 740,
+        "minWidth": 960,
+        "minHeight": 660,
+        "resizable": true,
+        "center": true
       }
     ],
     "security": {
@@ -23,7 +27,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["deb", "rpm"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
