@@ -13,6 +13,7 @@ pub struct ProcessRegistry {
     pub monitor: HashMap<String, JoinHandle<()>>,
     pub shell: HashMap<String, Child>,
     pub shell_stdin: HashMap<String, tokio::process::ChildStdin>,
+    pub clipboard_sync: HashMap<String, Child>,
 }
 
 impl Default for ProcessRegistry {
@@ -25,6 +26,7 @@ impl Default for ProcessRegistry {
             monitor: HashMap::new(),
             shell: HashMap::new(),
             shell_stdin: HashMap::new(),
+            clipboard_sync: HashMap::new(),
         }
     }
 }

@@ -1,7 +1,7 @@
 use serde::Serialize;
 use tokio::process::Command;
 
-use crate::config::{ADB_BIN, DEVICE_ID_ALLOWED_CHARS};
+use crate::config::{get_adb_path, DEVICE_ID_ALLOWED_CHARS};
 use crate::error::AppError;
 
 // ── Types ────────────────────────────────────────────────────────
@@ -41,8 +41,8 @@ fn validate_device_id(serial: &str) -> Result<(), AppError> {
 
 // ── Helpers ──────────────────────────────────────────────────────
 
-async fn adb_getprop(serial: &str, prop: &str) -> String {
-    Command::new(ADB_BIN)
+async fn adb_getprop(adb: &std::path::Path, serial: &str, prop: &str) -> String {
+    Command::new(adb)
         .args(["-s", serial, "shell", "getprop", prop])
         .output()
         .await
@@ -55,10 +55,11 @@ async fn adb_getprop(serial: &str, prop: &str) -> String {
 
 /// List all connected ADB devices with their model and connection type.
 #[tauri::command]
-pub async fn list_devices() -> Result<Vec<DeviceInfo>, String> {
+pub async fn list_devices(handle: tauri::AppHandle) -> Result<Vec<DeviceInfo>, String> {
     tracing::debug!("Listing connected devices");
+    let adb = get_adb_path(&handle);
 
-    let output = Command::new(ADB_BIN)
+    let output = Command::new(&adb)
         .args(["devices", "-l"])
         .output()
         .await
@@ -115,18 +116,33 @@ pub async fn list_devices() -> Result<Vec<DeviceInfo>, String> {
 
 /// Get detailed information about a specific device.
 #[tauri::command]
-pub async fn get_device_info(serial: String) -> Result<DeviceDetails, String> {
+pub async fn get_device_info(handle: tauri::AppHandle, serial: String) -> Result<DeviceDetails, String> {
     validate_device_id(&serial).map_err(String::from)?;
 
     tracing::debug!(serial = %serial, "Getting device info");
+    let adb = get_adb_path(&handle);
 
-    let model = adb_getprop(&serial, "ro.product.model").await;
-    let manufacturer = adb_getprop(&serial, "ro.product.manufacturer").await;
-    let android_version = adb_getprop(&serial, "ro.build.version.release").await;
-    let sdk_version = adb_getprop(&serial, "ro.build.version.sdk").await;
+    // Check device state first to avoid multiple shell error spam
+    let state_output = Command::new(&adb)
+        .args(["-s", &serial, "get-state"])
+        .output()
+        .await
+        .map_err(|e| AppError::Adb(format!("Failed to run adb: {}", e)))?;
+
+    let state = String::from_utf8_lossy(&state_output.stdout).trim().to_string();
+    let stderr = String::from_utf8_lossy(&state_output.stderr).to_string();
+
+    if state != "device" || stderr.contains("unauthorized") {
+        return Err(AppError::DeviceUnauthorized(serial).into());
+    }
+
+    let model = adb_getprop(&adb, &serial, "ro.product.model").await;
+    let manufacturer = adb_getprop(&adb, &serial, "ro.product.manufacturer").await;
+    let android_version = adb_getprop(&adb, &serial, "ro.build.version.release").await;
+    let sdk_version = adb_getprop(&adb, &serial, "ro.build.version.sdk").await;
 
     // Resolution
-    let resolution = Command::new(ADB_BIN)
+    let resolution = Command::new(&adb)
         .args(["-s", &serial, "shell", "wm", "size"])
         .output()
         .await
@@ -139,7 +155,7 @@ pub async fn get_device_info(serial: String) -> Result<DeviceDetails, String> {
         .unwrap_or_default();
 
     // Battery
-    let battery = Command::new(ADB_BIN)
+    let battery = Command::new(&adb)
         .args(["-s", &serial, "shell", "dumpsys", "battery"])
         .output()
         .await

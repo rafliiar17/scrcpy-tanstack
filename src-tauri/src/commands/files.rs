@@ -5,6 +5,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::io::AsyncBufReadExt;
 use tauri::Emitter;
+use crate::config::get_adb_path;
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -43,8 +44,8 @@ fn expand_tilde(path: &str) -> String {
     path.to_string()
 }
 
-async fn run_adb_shell(serial: &str, cmd: &str) -> String {
-    let output = Command::new("adb")
+async fn run_adb_shell(adb: &std::path::Path, serial: &str, cmd: &str) -> String {
+    let output = Command::new(adb)
         .args(["-s", serial, "shell", cmd])
         .output()
         .await
@@ -134,12 +135,13 @@ fn parse_ls_output(stdout: &str) -> Vec<FileInfo> {
 // ── Commands ─────────────────────────────────────────────────────
 
 #[tauri::command]
-pub async fn list_files(serial: String, path: String) -> Result<Vec<FileInfo>, String> {
+pub async fn list_files(handle: tauri::AppHandle, serial: String, path: String) -> Result<Vec<FileInfo>, String> {
     if serial.is_empty() { return Err("No device selected".into()); }
     let safe_path = if path.is_empty() { "/" } else { &path };
     
+    let adb = get_adb_path(&handle);
     let cmd = format!("ls -lLA \"{}\"", safe_path.replace('"', "\\\""));
-    let stdout = run_adb_shell(&serial, &cmd).await;
+    let stdout = run_adb_shell(&adb, &serial, &cmd).await;
     
     if stdout.contains("No such file or directory") || stdout.contains("Permission denied") {
         return Err(format!("Cannot access {}: Permission denied or not found", safe_path));
@@ -165,8 +167,9 @@ pub async fn pull_file(
     }
 
     let dl_id = download_id.unwrap_or_default();
+    let adb = get_adb_path(&app);
 
-    let mut child = Command::new("adb")
+    let mut child = Command::new(&adb)
         .args(["-s", &serial, "pull", &remote, &expanded_local])
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
@@ -298,8 +301,9 @@ pub async fn cancel_pull(download_id: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub async fn push_file(serial: String, local: String, remote: String) -> Result<String, String> {
-    let output = Command::new("adb")
+pub async fn push_file(handle: tauri::AppHandle, serial: String, local: String, remote: String) -> Result<String, String> {
+    let adb = get_adb_path(&handle);
+    let output = Command::new(&adb)
         .args(["-s", &serial, "push", &local, &remote])
         .output()
         .await
@@ -313,9 +317,10 @@ pub async fn push_file(serial: String, local: String, remote: String) -> Result<
 }
 
 #[tauri::command]
-pub async fn delete_file(serial: String, path: String) -> Result<String, String> {
+pub async fn delete_file(handle: tauri::AppHandle, serial: String, path: String) -> Result<String, String> {
+    let adb = get_adb_path(&handle);
     let cmd = format!("rm -rf \"{}\"", path.replace('"', "\\\""));
-    let output = Command::new("adb")
+    let output = Command::new(&adb)
         .args(["-s", &serial, "shell", &cmd])
         .output()
         .await
@@ -330,9 +335,10 @@ pub async fn delete_file(serial: String, path: String) -> Result<String, String>
 }
 
 #[tauri::command]
-pub async fn create_directory(serial: String, path: String) -> Result<String, String> {
+pub async fn create_directory(handle: tauri::AppHandle, serial: String, path: String) -> Result<String, String> {
+    let adb = get_adb_path(&handle);
     let cmd = format!("mkdir -p \"{}\"", path.replace('"', "\\\""));
-    let output = Command::new("adb")
+    let output = Command::new(&adb)
         .args(["-s", &serial, "shell", &cmd])
         .output()
         .await

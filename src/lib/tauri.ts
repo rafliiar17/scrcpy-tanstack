@@ -121,4 +121,27 @@ export const api = {
 
   getShellHistory: (serial: string) =>
     invoke<string[]>("get_shell_history", { serial }),
+
+  // ── Clipboard ──────────────────────────────────────────────────
+  startClipboardSync: (serial: string) =>
+    invoke<string>("start_clipboard_sync", { serial }),
+
+  stopClipboardSync: (serial: string) =>
+    invoke<string>("stop_clipboard_sync", { serial }),
+
+  getClipboardSyncStatus: (serial: string) =>
+    invoke<boolean>("get_clipboard_sync_status", { serial }),
+
+  // ── Drivers ────────────────────────────────────────────────────
+  checkAdbDrivers: () =>
+    invoke<{ found_problem: boolean; message: string; devices: string[] }>("check_adb_drivers"),
+
+  installAdbDrivers: () =>
+    invoke<string>("install_adb_drivers"),
+
+  getAdbStatus: () =>
+    invoke<{ found: boolean; path: string; os: string; distro: string | null; bundled: boolean }>("get_adb_status"),
+
+  downloadPlatformTools: () =>
+    invoke<string>("download_platform_tools"),
 };

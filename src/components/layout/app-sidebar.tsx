@@ -10,6 +10,7 @@ import {
   Settings,
   Smartphone,
   Terminal,
+  Clipboard,
 } from "lucide-react";
 
 import {
@@ -43,6 +44,7 @@ const navManagement = [
   { title: "Apps", icon: Package, url: "#/management/apps" },
   { title: "Files", icon: FolderOpen, url: "#/management/files" },
   { title: "Gallery", icon: Image, url: "#/management/gallery" },
+  { title: "Clipboard", icon: Clipboard, url: "#/management/clipboard" },
 ];
 
 const navSystem = [

@@ -16,6 +16,7 @@ import { MonitorPage } from "@/pages/monitor";
 import { LogsPage } from "@/pages/logs";
 import { SettingsPage } from "@/pages/settings";
 import { ShellPage } from "@/pages/shell";
+import { ClipboardPage } from "./pages/clipboard";
 import { CommandPalette } from "@/components/command-palette";
 
 // ── Simple hash-based routing for Tauri SPA ──────────────────────
@@ -29,6 +30,7 @@ const routes: Record<string, { title: string; component: React.FC }> = {
   "/management/apps": { title: "Apps", component: AppsPage },
   "/management/files": { title: "Files", component: FilesPage },
   "/management/gallery": { title: "Gallery", component: GalleryPage },
+  "/management/clipboard": { title: "Clipboard", component: ClipboardPage },
   "/system/monitor": { title: "Monitor", component: MonitorPage },
   "/system/logs": { title: "Logcat", component: LogsPage },
   "/system/settings": { title: "Settings", component: SettingsPage },

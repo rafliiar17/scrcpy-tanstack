@@ -45,6 +45,9 @@ pub fn run() {
             commands::mirror::start_mirror,
             commands::mirror::stop_mirror,
             commands::mirror::get_mirror_status,
+            commands::mirror::start_clipboard_sync,
+            commands::mirror::stop_clipboard_sync,
+            commands::mirror::get_clipboard_sync_status,
             commands::mirror::start_virtual_display,
             commands::mirror::list_cameras,
             // Apps
@@ -78,6 +81,9 @@ pub fn run() {
             commands::system::write_to_shell,
             commands::system::get_app_logs,
             commands::system::get_shell_history,
+            commands::system::check_adb_drivers,
+            commands::system::get_adb_status,
+            commands::system::download_platform_tools,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

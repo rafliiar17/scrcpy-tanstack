@@ -25,7 +25,12 @@ export function MirrorPage() {
   // Initialize options when device changes
   useEffect(() => {
     if (serial) {
-      setOptions(defaultMirrorOptions(serial));
+      const baseOptions = defaultMirrorOptions(serial);
+      const savedSync = localStorage.getItem(`mirror-sync-clipboard-${serial}`);
+      setOptions({
+        ...baseOptions,
+        sync_clipboard: savedSync === null ? true : savedSync !== "false"
+      });
     } else {
       setOptions(null);
     }
@@ -236,6 +241,20 @@ export function MirrorPage() {
                   <p className="text-xs text-muted-foreground">Start in fullscreen mode</p>
                 </div>
                 <Switch checked={options.fullscreen} onCheckedChange={(v: boolean) => updateOption("fullscreen", v)} />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Sync Clipboard</Label>
+                  <p className="text-xs text-muted-foreground">Auto-sync PC & device clipboards</p>
+                </div>
+                <Switch 
+                  checked={options.sync_clipboard} 
+                  onCheckedChange={(v: boolean) => {
+                    updateOption("sync_clipboard", v);
+                    localStorage.setItem(`mirror-sync-clipboard-${serial}`, String(v));
+                  }} 
+                />
               </div>
             </CardContent>
           </Card>

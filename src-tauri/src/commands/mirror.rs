@@ -1,8 +1,10 @@
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
 use tokio::process::Command;
+use std::process::Stdio;
 
 use crate::config::*;
+use crate::config::get_adb_path;
 use crate::error::AppError;
 use crate::state::AppState;
 
@@ -23,6 +25,7 @@ pub struct MirrorOptions {
     pub stay_awake: bool,
     pub turn_screen_off: bool,
     pub no_control: bool,
+    pub sync_clipboard: bool,
     pub window_title: String,
     pub custom_args: String,
     pub audio_source: String,
@@ -201,6 +204,9 @@ fn build_mirror_args(opts: &MirrorOptions) -> Vec<String> {
     }
     if opts.no_control {
         args.push("--no-control".into());
+    }
+    if !opts.sync_clipboard {
+        args.push("--no-clipboard-autosync".into());
     }
 
     // Window title
@@ -492,4 +498,167 @@ pub async fn start_virtual_display(
         })?;
 
     Ok(format!("Virtual display started for {}", if package.is_empty() { serial } else { package }))
+}
+
+async fn get_pc_clipboard() -> Option<String> {
+    // Try wl-paste (Wayland)
+    if let Ok(child) = Command::new("wl-paste")
+        .arg("-n")
+        .stdout(Stdio::piped())
+        .spawn()
+    {
+        if let Ok(output) = child.wait_with_output().await {
+            if output.status.success() {
+                return Some(String::from_utf8_lossy(&output.stdout).trim().to_string());
+            }
+        }
+    }
+
+    // Try xclip (X11)
+    if let Ok(child) = Command::new("xclip")
+        .args(["-o", "-selection", "clipboard"])
+        .stdout(Stdio::piped())
+        .spawn()
+    {
+        if let Ok(output) = child.wait_with_output().await {
+            if output.status.success() {
+                return Some(String::from_utf8_lossy(&output.stdout).trim().to_string());
+            }
+        }
+    }
+
+    None
+}
+
+#[tauri::command]
+pub async fn start_clipboard_sync(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    serial: String,
+) -> Result<String, String> {
+    if serial.is_empty() {
+        return Err("No device selected".to_string());
+    }
+
+    let adb = get_adb_path(&app);
+    let mut registry = state.processes.lock().await;
+    if registry.clipboard_sync.contains_key(&serial) {
+        return Ok("Clipboard sync already active".to_string());
+    }
+
+    // Spawn the rust-based PC clipboard listener (KDE Connect style)
+    let app_handle = app.clone();
+    let serial_clone = serial.clone();
+    let state_clone = state.processes.clone();
+
+    // Spawn background task for PC <-> Android sync
+    tokio::spawn(async move {
+        let mut last_pc_clipboard = get_pc_clipboard().await.unwrap_or_default();
+        let mut last_android_clipboard = String::new();
+        tracing::info!(serial = %serial_clone, "True Headless Sync Service started (Deep Sync Mode)");
+
+        // Initial Connect Sync: Push PC clipboard to Android Clipboard immediately on start
+        if !last_pc_clipboard.is_empty() {
+            let escaped = last_pc_clipboard.replace("'", "'\\''");
+            let _ = Command::new(&adb)
+                .args(["-s", &serial_clone, "shell", &format!("cmd clipboard set '{}' 2>/dev/null || service call clipboard 2 i32 1 s16 '{}' 2>/dev/null", escaped, escaped)])
+                .spawn();
+            let _ = app_handle.emit("clipboard-sync-event", &last_pc_clipboard);
+        }
+
+        loop {
+            tokio::time::sleep(tokio::time::Duration::from_millis(1500)).await;
+
+            // Check if still active in registry
+            {
+                let reg = state_clone.lock().await;
+                if !reg.clipboard_sync.contains_key(&serial_clone) {
+                    break;
+                }
+            }
+
+            // A. PC -> Android (Direct Clipboard Injection - No Typing)
+            if let Some(current_pc) = get_pc_clipboard().await {
+                if !current_pc.is_empty() && current_pc != last_pc_clipboard && current_pc != last_android_clipboard {
+                    tracing::info!(serial = %serial_clone, "PC Content Changed -> Syncing to Android Clipboard");
+                    let escaped = current_pc.replace("'", "'\\''");
+                    
+                    // Use cmd clipboard (Android 12+) or service call for true clipboard sync.
+                    // This prevents the text from being automatically typed into message fields.
+                    let _ = Command::new(&adb)
+                        .args(["-s", &serial_clone, "shell", &format!("cmd clipboard set '{}' 2>/dev/null || service call clipboard 2 i32 1 s16 '{}' 2>/dev/null", escaped, escaped)])
+                        .spawn();
+                    
+                    last_pc_clipboard = current_pc.clone();
+                    let _ = app_handle.emit("clipboard-sync-event", &current_pc);
+                }
+            }
+
+            // B. Android -> PC (Deep ADB Pull)
+            // cmd clipboard get is cleaner. Fallback to service call for older versions.
+            let adb_out = Command::new(&adb)
+                .args(["-s", &serial_clone, "shell", "cmd clipboard get 2>/dev/null || service call clipboard 1 2>/dev/null"])
+                .output()
+                .await;
+
+            if let Ok(output) = adb_out {
+                let raw = String::from_utf8_lossy(&output.stdout);
+                let current_android = if raw.starts_with("Result: Parcel") || raw.contains("'") {
+                    raw.split("'").nth(1).map(|s| s.to_string())
+                } else {
+                    let trimmed = raw.trim();
+                    if !trimmed.is_empty() && !trimmed.contains("error") && !trimmed.contains("Unknown service") {
+                        Some(trimmed.to_string())
+                    } else {
+                        None
+                    }
+                };
+
+                if let Some(content) = current_android {
+                    if !content.is_empty() && content != last_android_clipboard && content != last_pc_clipboard {
+                         tracing::info!(serial = %serial_clone, "Android Content Changed -> Updating PC history");
+                         last_android_clipboard = content.clone();
+                         let _ = app_handle.emit("clipboard-sync-event", content);
+                    }
+                }
+            }
+        }
+        tracing::info!(serial = %serial_clone, "Sync Service stopped");
+    });
+
+    // Start a "sleep" process to keep the entry in registry
+    let child = Command::new("sleep")
+        .arg("infinity")
+        .spawn()
+        .map_err(|e| format!("Failed to start background task: {}", e))?;
+
+    registry.clipboard_sync.insert(serial.clone(), child);
+
+    Ok(format!("Global headless sync (Deep) started for {}", serial))
+}
+
+#[tauri::command]
+pub async fn stop_clipboard_sync(
+    state: tauri::State<'_, AppState>,
+    serial: String,
+) -> Result<String, String> {
+    let mut registry = state.processes.lock().await;
+
+    if let Some(mut child) = registry.clipboard_sync.remove(&serial) {
+        let _ = child.kill().await;
+        let _ = child.wait().await;
+        tracing::info!(serial = %serial, "Background clipboard sync stopped");
+        Ok(format!("Clipboard sync stopped for {}", serial))
+    } else {
+        Ok("No active clipboard sync to stop".to_string())
+    }
+}
+
+#[tauri::command]
+pub async fn get_clipboard_sync_status(
+    state: tauri::State<'_, AppState>,
+    serial: String,
+) -> Result<bool, String> {
+    let registry = state.processes.lock().await;
+    Ok(registry.clipboard_sync.contains_key(&serial))
 }

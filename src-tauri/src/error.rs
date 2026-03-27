@@ -28,6 +28,9 @@ pub enum AppError {
     #[error("Invalid argument: {0}")]
     InvalidArgument(String),
 
+    #[error("Device unauthorized: {0}")]
+    DeviceUnauthorized(String),
+
     #[error("Permission denied: {0}")]
     PermissionDenied(String),
 }

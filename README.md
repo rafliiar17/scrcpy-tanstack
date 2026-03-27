@@ -1,4 +1,4 @@
-# ScrcpyGUI Pro v0.1.0
+# ScrcpyGUI Pro v0.1.1
 
 ![ScrcpyGUI Pro Banner](https://img.shields.io/badge/Scrcpy-Pro-blue?style=for-the-badge&logo=android)
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-FFC131?style=for-the-badge&logo=tauri)
@@ -13,6 +13,8 @@
 - 📜 **Session Persistence**: Shell history and Application Logs (`logcat`) are preserved globally across navigation tabs.
 - 📂 **Advanced File Manager**: High-speed file transfers with real-time progress bars and disk-based polling for 100% accuracy.
 - 🛠️ **Developer Tools**: One-click TCP/IP connection, Reboot options (Recovery, Bootloader, EDL), and detailed System Monitoring.
+- 📦 **Zero-Dependency Setup**: Bundled ADB binaries with mandatory Windows DLLs for a 100% offline-ready, out-of-the-box experience.
+- 🧙 **Intelligent Connection Wizard**: Distro-aware setup instructions for Linux and automated troubleshooting for manual driver issues.
 - 🎨 **Premium UI/UX**: Modern dark mode, ShadcnUI components, and JetBrains Mono typography for a pro developer experience.
 
 ## 🚀 Getting Started
@@ -21,7 +23,7 @@
 
 - [Bun](https://bun.sh/) (v1.3.11+)
 - [Rust](https://www.rust-lang.org/) (v1.75+)
-- [ADB (Android Debug Bridge)](https://developer.android.com/tools/adb) installed and in your PATH.
+- [ADB (Android Debug Bridge)](https://developer.android.com/tools/adb) - *Now bundled internally for a zero-config experience, but can still use system PATH if preferred.*
 
 ### Development
 
@@ -41,19 +43,23 @@
    bun run tauri dev
    ```
 
-## 📦 Packaging & Distribution
+### 📦 Packaging & Distribution
 
-This project is configured with **GitHub Actions** to automate the building and packaging process for multiple platforms.
+This project is configured with **GitHub Actions** to automate the building and packaging process.
 
 - **🐧 Linux**: Automated builds for `.deb`, `.rpm`, and `.AppImage`.
 - **🪟 Windows**: Automated builds for `.exe` (NSIS) and `.msi`.
+- **🍎 macOS**: Automated builds for `.dmg` and `.app`.
 
-See [.github/workflows/release.yml](.github/workflows/release.yml) for the build logic.
+#### How to trigger a Build/Release:
+1.  **Tag it**: Run `git tag v0.1.0` then `git push --tags`.
+2.  **GitHub Actions**: Go to the **Actions** tab on your GitHub repository, select "Release", and click "Run workflow".
+3.  **Drafts**: Once finished, a new draft release will appear in the "Releases" section of your repo with all binaries attached.
 
 ## 🗺️ Roadmap & History
 
-- [Roadmap](./ROADMAP.md): Future vision and planned features.
-- [Changelog](./CHANGELOG.md): History of changes and releases.
+- [Roadmap](./docs/ROADMAP.md): Future vision and planned features.
+- [Changelog](./docs/CHANGELOG.md): History of changes and releases.
 
 ## 📄 License
 

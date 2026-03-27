@@ -34,6 +34,7 @@ export interface MirrorOptions {
   stay_awake: boolean;
   turn_screen_off: boolean;
   no_control: boolean;
+  sync_clipboard: boolean;
   window_title: string;
   custom_args: string;
   audio_source: string;
@@ -91,6 +92,7 @@ export const MIRROR_DEFAULTS = {
   stayAwake: true,
   screenOff: false,
   audio: true,
+  clipboard: true,
 } as const;
 
 export const MIRROR_CONSTRAINTS = {

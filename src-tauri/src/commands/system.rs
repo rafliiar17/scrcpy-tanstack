@@ -4,7 +4,7 @@ use tauri::{AppHandle, Emitter};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 
-use crate::config::{ADB_BIN, EVENT_LOGCAT_PREFIX};
+use crate::config::{get_adb_path, EVENT_LOGCAT_PREFIX};
 use crate::state::AppState;
 
 // ── Types ────────────────────────────────────────────────────────
@@ -28,10 +28,11 @@ pub struct ShellResult {
 // ── Commands ─────────────────────────────────────────────────────
 
 #[tauri::command]
-pub async fn tcpip_connect(ip: String, port: String) -> Result<String, String> {
+pub async fn tcpip_connect(handle: tauri::AppHandle, ip: String, port: String) -> Result<String, String> {
+    let adb = get_adb_path(&handle);
     let target = format!("{}:{}", ip, if port.is_empty() { "5555" } else { &port });
     
-    let output = Command::new(ADB_BIN)
+    let output = Command::new(&adb)
         .args(["connect", &target])
         .output()
         .await
@@ -46,8 +47,9 @@ pub async fn tcpip_connect(ip: String, port: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub async fn tcpip_disconnect(target: String) -> Result<String, String> {
-    let output = Command::new(ADB_BIN)
+pub async fn tcpip_disconnect(handle: tauri::AppHandle, target: String) -> Result<String, String> {
+    let adb = get_adb_path(&handle);
+    let output = Command::new(&adb)
         .args(["disconnect", &target])
         .output()
         .await
@@ -57,8 +59,9 @@ pub async fn tcpip_disconnect(target: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub async fn enable_tcpip(serial: String) -> Result<String, String> {
-    let output = Command::new(ADB_BIN)
+pub async fn enable_tcpip(handle: tauri::AppHandle, serial: String) -> Result<String, String> {
+    let adb = get_adb_path(&handle);
+    let output = Command::new(&adb)
         .args(["-s", &serial, "tcpip", "5555"])
         .output()
         .await
@@ -82,10 +85,11 @@ pub struct MdnsDevice {
 }
 
 #[tauri::command]
-pub async fn adb_pair(ip: String, port: String, code: String) -> Result<String, String> {
+pub async fn adb_pair(handle: tauri::AppHandle, ip: String, port: String, code: String) -> Result<String, String> {
+    let adb = get_adb_path(&handle);
     let target = format!("{}:{}", ip, port);
 
-    let mut child = std::process::Command::new(ADB_BIN)
+    let mut child = std::process::Command::new(&adb)
         .args(["pair", &target])
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
@@ -115,9 +119,10 @@ pub async fn adb_pair(ip: String, port: String, code: String) -> Result<String, 
 }
 
 #[tauri::command]
-pub async fn adb_mdns_discover() -> Result<Vec<MdnsDevice>, String> {
+pub async fn adb_mdns_discover(handle: tauri::AppHandle) -> Result<Vec<MdnsDevice>, String> {
+    let adb = get_adb_path(&handle);
     // `adb mdns services` lists discovered services
-    let output = Command::new(ADB_BIN)
+    let output = Command::new(&adb)
         .args(["mdns", "services"])
         .output()
         .await
@@ -148,21 +153,22 @@ pub async fn adb_mdns_discover() -> Result<Vec<MdnsDevice>, String> {
 // ── ADB Proxy / Server ──────────────────────────────────────────
 
 #[tauri::command]
-pub async fn set_adb_server(host: String, port: String) -> Result<String, String> {
+pub async fn set_adb_server(handle: tauri::AppHandle, host: String, port: String) -> Result<String, String> {
+    let adb = get_adb_path(&handle);
     if host.is_empty() {
         // Reset to local
         std::env::remove_var("ANDROID_ADB_SERVER_ADDRESS");
         std::env::remove_var("ANDROID_ADB_SERVER_PORT");
         // Kill and restart local server
-        let _ = Command::new(ADB_BIN).args(["kill-server"]).output().await;
-        let _ = Command::new(ADB_BIN).args(["start-server"]).output().await;
+        let _ = Command::new(&adb).args(["kill-server"]).output().await;
+        let _ = Command::new(&adb).args(["start-server"]).output().await;
         Ok("Reset to local ADB server".into())
     } else {
         std::env::set_var("ANDROID_ADB_SERVER_ADDRESS", &host);
         std::env::set_var("ANDROID_ADB_SERVER_PORT", if port.is_empty() { "5037" } else { &port });
         // Restart server with new config
-        let _ = Command::new(ADB_BIN).args(["kill-server"]).output().await;
-        let _ = Command::new(ADB_BIN).args(["start-server"]).output().await;
+        let _ = Command::new(&adb).args(["kill-server"]).output().await;
+        let _ = Command::new(&adb).args(["start-server"]).output().await;
         Ok(format!("ADB server set to {}:{}", host, if port.is_empty() { "5037" } else { &port }))
     }
 }
@@ -175,13 +181,14 @@ pub async fn get_adb_server() -> Result<(String, String), String> {
 }
 
 #[tauri::command]
-pub async fn reboot_device(serial: String, mode: String) -> Result<String, String> {
+pub async fn reboot_device(handle: tauri::AppHandle, serial: String, mode: String) -> Result<String, String> {
+    let adb = get_adb_path(&handle);
     let mut args = vec!["-s", &serial, "reboot"];
     if mode == "bootloader" || mode == "recovery" || mode == "edl" {
         args.push(&mode);
     }
     
-    let output = Command::new(ADB_BIN)
+    let output = Command::new(&adb)
         .args(&args)
         .output()
         .await
@@ -195,8 +202,9 @@ pub async fn reboot_device(serial: String, mode: String) -> Result<String, Strin
 }
 
 #[tauri::command]
-pub async fn shell_run(serial: String, command: String) -> Result<ShellResult, String> {
-    let output = Command::new(ADB_BIN)
+pub async fn shell_run(handle: tauri::AppHandle, serial: String, command: String) -> Result<ShellResult, String> {
+    let adb = get_adb_path(&handle);
+    let output = Command::new(&adb)
         .args(["-s", &serial, "shell", &command])
         .output()
         .await
@@ -224,7 +232,8 @@ pub async fn start_logcat(
     }
 
     // Spawn adb logcat
-    let mut child = Command::new(ADB_BIN)
+    let adb = get_adb_path(&app);
+    let mut child = Command::new(&adb)
         .args(["-s", &serial, "logcat", "-v", "time"])
         .stdout(std::process::Stdio::piped())
         .spawn()
@@ -283,8 +292,9 @@ pub async fn start_shell(
     }
 
     println!("Spawning interactive shell for [{}]", serial);
+    let adb = get_adb_path(&app);
 
-    let mut child = Command::new(ADB_BIN)
+    let mut child = Command::new(&adb)
         .args(["-s", &serial, "shell", "-tt"])
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
@@ -401,5 +411,162 @@ pub async fn get_shell_history(
         Ok(entry.iter().cloned().collect())
     } else {
         Ok(vec![])
+    }
+}
+#[derive(Debug, Clone, Serialize)]
+pub struct DriverCheckResult {
+    pub found_problem: bool,
+    pub message: String,
+    pub devices: Vec<String>,
+}
+
+#[tauri::command]
+pub async fn check_adb_drivers() -> Result<DriverCheckResult, String> {
+    #[cfg(target_os = "windows")]
+    {
+        // PowerShell script to find problematic USB devices related to Android
+        // We look for "ADB", "Android", or common VIDs (Google=18D1, Samsung=04E8, etc.)
+        let script = r#"
+            Get-PnpDevice -PresentOnly | 
+            Where-Object { 
+                ($_.InstanceId -match 'VID_18D1' -or $_.InstanceId -match 'VID_04E8' -or $_.FriendlyName -match 'ADB' -or $_.FriendlyName -match 'Android') -and 
+                ($_.Status -ne 'OK' -or $_.ConfigManagerErrorCode -ne 0) 
+            } | 
+            Select-Object -ExpandProperty FriendlyName
+        "#;
+
+        let output = Command::new("powershell")
+            .args(["-Command", script])
+            .output()
+            .await
+            .map_err(|e| format!("Failed to run PowerShell: {}", e))?;
+
+        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        let devices: Vec<String> = stdout.lines()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+
+        if devices.is_empty() {
+            Ok(DriverCheckResult {
+                found_problem: false,
+                message: "No driver issues detected via PnP scan.".into(),
+                devices: vec![],
+            })
+        } else {
+            Ok(DriverCheckResult {
+                found_problem: true,
+                message: format!("Detected {} device(s) with missing or faulty drivers.", devices.len()),
+                devices,
+            })
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        Ok(DriverCheckResult {
+            found_problem: false,
+            message: "Driver check is only applicable to Windows systems.".into(),
+            devices: vec![],
+        })
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AdbStatus {
+    pub found: bool,
+    pub path: String,
+    pub os: String,
+    pub distro: Option<String>,
+    pub bundled: bool,
+}
+
+#[tauri::command]
+pub async fn get_adb_status(handle: tauri::AppHandle) -> Result<AdbStatus, String> {
+    use tauri::Manager;
+    let adb = get_adb_path(&handle);
+    let adb_str = adb.to_string_lossy().to_string();
+    
+    // Check if it actually works
+    let found = Command::new(&adb).arg("version").output().await.is_ok();
+    
+    let os = std::env::consts::OS.to_string();
+    let mut distro = None;
+
+    // Check if bundled
+    let resource_dir = handle.path().resource_dir().unwrap_or_default();
+    let bundled = adb.starts_with(resource_dir);
+
+    #[cfg(target_os = "linux")]
+    {
+        if let Ok(content) = std::fs::read_to_string("/etc/os-release") {
+            if content.to_lowercase().contains("ubuntu") || content.to_lowercase().contains("debian") {
+                distro = Some("debian".into());
+            } else if content.to_lowercase().contains("arch") {
+                distro = Some("arch".into());
+            } else if content.to_lowercase().contains("fedora") {
+                distro = Some("fedora".into());
+            }
+        }
+    }
+
+    Ok(AdbStatus {
+        found,
+        path: adb_str,
+        os,
+        distro,
+        bundled,
+    })
+}
+
+#[tauri::command]
+pub async fn download_platform_tools(handle: tauri::AppHandle) -> Result<String, String> {
+    #[cfg(target_os = "windows")]
+    {
+        use tauri::Manager;
+        let url = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip";
+        let local_bin = handle.path().app_local_data_dir().unwrap_or_default().join("bin");
+        std::fs::create_dir_all(&local_bin).map_err(|e| e.to_string())?;
+
+        let zip_path = local_bin.join("platform-tools.zip");
+        
+        // Download
+        let response = reqwest::get(url).await.map_err(|e| format!("Download failed: {}", e))?;
+        let bytes = response.bytes().await.map_err(|e| format!("Failed to read bytes: {}", e))?;
+        std::fs::write(&zip_path, &bytes).map_err(|e| format!("Failed to save zip: {}", e))?;
+
+        // Extract
+        let file = std::fs::File::open(&zip_path).map_err(|e| e.to_string())?;
+        let mut archive = zip::ZipArchive::new(file).map_err(|e| e.to_string())?;
+        
+        for i in 0..archive.len() {
+            let mut file = archive.by_index(i).map_err(|e| e.to_string())?;
+            let outpath = match file.enclosed_name() {
+                Some(path) => local_bin.join(path),
+                None => continue,
+            };
+
+            if (*file.name()).ends_with('/') {
+                std::fs::create_dir_all(&outpath).unwrap();
+            } else {
+                if let Some(p) = outpath.parent() {
+                    if !p.exists() {
+                        std::fs::create_dir_all(p).unwrap();
+                    }
+                }
+                let mut outfile = std::fs::File::create(&outpath).unwrap();
+                std::io::copy(&mut file, &mut outfile).unwrap();
+            }
+        }
+
+        // Cleanup
+        let _ = std::fs::remove_file(zip_path);
+        
+        Ok("ADB Platform Tools downloaded and setup successfully.".into())
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("Automated download is currently only supported on Windows.".into())
     }
 }

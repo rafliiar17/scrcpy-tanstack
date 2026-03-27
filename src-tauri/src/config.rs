@@ -10,9 +10,45 @@ lazy_static! {
 }
 
 // ── Binary Paths ─────────────────────────────────────────────────
-pub const ADB_BIN: &str = "adb";
+// ── Binary Paths ─────────────────────────────────────────────────
 pub const SCRCPY_BIN: &str = "scrcpy";
 pub const FFMPEG_BIN: &str = "ffmpeg";
+
+// In Tauri v2, we obtain the base paths via Manager::path().
+// This helper retrieves the expected local path for ADB.
+pub fn get_adb_path(handle: &tauri::AppHandle) -> std::path::PathBuf {
+    use tauri::Manager;
+    
+    // 1. Check Bundled Resources (Internal)
+    // Structure: resources/bin/[os]/adb
+    let resource_bin = handle.path().resource_dir().unwrap_or_default().join("resources").join("bin");
+    
+    #[cfg(target_os = "windows")]
+    let bundled_adb = resource_bin.join("windows").join("adb.exe");
+    #[cfg(target_os = "linux")]
+    let bundled_adb = resource_bin.join("linux").join("adb");
+    #[cfg(target_os = "macos")]
+    let bundled_adb = resource_bin.join("macos").join("adb");
+
+    if bundled_adb.exists() {
+        return bundled_adb;
+    }
+
+    // 2. Check App Local Data (Updates)
+    let local_bin = handle.path().app_local_data_dir().unwrap_or_default().join("bin");
+    
+    #[cfg(target_os = "windows")]
+    let local_adb = local_bin.join("platform-tools").join("adb.exe");
+    #[cfg(not(target_os = "windows"))]
+    let local_adb = local_bin.join("platform-tools").join("adb");
+
+    if local_adb.exists() {
+        local_adb
+    } else {
+        // 3. Fallback to System PATH
+        std::path::PathBuf::from("adb")
+    }
+}
 
 // ── Mirror Defaults ──────────────────────────────────────────────
 pub const MIRROR_DEFAULT_BITRATE_MBPS: u32 = 8;

@@ -26,6 +26,7 @@ export function defaultMirrorOptions(deviceSerial: string): MirrorOptions {
     stay_awake: MIRROR_DEFAULTS.stayAwake,
     turn_screen_off: MIRROR_DEFAULTS.screenOff,
     no_control: false,
+    sync_clipboard: MIRROR_DEFAULTS.clipboard,
     window_title: "",
     custom_args: "",
     audio_source: "output",

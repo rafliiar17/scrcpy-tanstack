@@ -1,4 +1,4 @@
-import { ChevronsUpDown, Smartphone, Wifi, Usb } from "lucide-react";
+import { ChevronsUpDown, Smartphone, Wifi, Usb, AlertCircle } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -81,9 +81,14 @@ export function DeviceSelector() {
                       {device.serial}
                     </span>
                   </div>
-                  <div className="ml-auto">
+                  <div className="ml-auto flex items-center gap-1.5">
                     {device.status === "device" ? (
                       <span className="size-2 rounded-full bg-green-500 inline-block" />
+                    ) : device.status === "unauthorized" ? (
+                      <>
+                        <AlertCircle className="size-3 text-yellow-500" />
+                        <span className="size-2 rounded-full bg-yellow-500 inline-block" />
+                      </>
                     ) : (
                       <span className="size-2 rounded-full bg-red-500 inline-block" />
                     )}

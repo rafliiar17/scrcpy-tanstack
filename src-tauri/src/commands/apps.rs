@@ -2,6 +2,7 @@ use serde::Serialize;
 use tauri::AppHandle;
 use tokio::process::Command;
 
+use crate::config::get_adb_path;
 use crate::error::AppError;
 
 // ── Types ────────────────────────────────────────────────────────
@@ -30,8 +31,8 @@ fn validate_package(package: &str) -> Result<(), AppError> {
     Ok(())
 }
 
-async fn run_adb_shell(serial: &str, cmd: &str) -> Result<String, AppError> {
-    let output = Command::new("adb")
+async fn run_adb_shell(adb: &std::path::Path, serial: &str, cmd: &str) -> Result<String, AppError> {
+    let output = Command::new(adb)
         .args(["-s", serial, "shell", cmd])
         .output()
         .await
@@ -51,15 +52,17 @@ async fn run_adb_shell(serial: &str, cmd: &str) -> Result<String, AppError> {
 // ── Commands ─────────────────────────────────────────────────────
 
 #[tauri::command]
-pub async fn list_packages(serial: String) -> Result<Vec<AppInfo>, String> {
+pub async fn list_packages(handle: tauri::AppHandle, serial: String) -> Result<Vec<AppInfo>, String> {
     if serial.is_empty() {
         return Err(AppError::InvalidArgument("No device selected".into()).into());
     }
 
+    let adb = get_adb_path(&handle);
+
     // List system apps
-    let sys_output = run_adb_shell(&serial, "pm list packages -s").await.map_err(String::from)?;
+    let sys_output = run_adb_shell(&adb, &serial, "pm list packages -s").await.map_err(String::from)?;
     // List third-party apps
-    let user_output = run_adb_shell(&serial, "pm list packages -3").await.map_err(String::from)?;
+    let user_output = run_adb_shell(&adb, &serial, "pm list packages -3").await.map_err(String::from)?;
 
     let mut apps = Vec::new();
 
@@ -102,7 +105,8 @@ pub async fn install_apk(
         return Err(AppError::InvalidArgument("No APK path provided".into()).into());
     }
 
-    let output = Command::new("adb")
+    let adb = get_adb_path(&_app);
+    let output = Command::new(&adb)
         .args(["-s", &serial, "install", "-r", &path])
         .output()
         .await
@@ -123,11 +127,12 @@ pub async fn install_apk(
 }
 
 #[tauri::command]
-pub async fn uninstall_app(serial: String, package: String) -> Result<String, String> {
+pub async fn uninstall_app(handle: tauri::AppHandle, serial: String, package: String) -> Result<String, String> {
     validate_package(&package).map_err(String::from)?;
     
+    let adb = get_adb_path(&handle);
     let cmd = format!("pm uninstall --user 0 {}", package);
-    let stdout = run_adb_shell(&serial, &cmd).await.map_err(String::from)?;
+    let stdout = run_adb_shell(&adb, &serial, &cmd).await.map_err(String::from)?;
 
     if stdout.to_lowercase().contains("success") {
         Ok(format!("Uninstalled {}", package))
@@ -137,11 +142,12 @@ pub async fn uninstall_app(serial: String, package: String) -> Result<String, St
 }
 
 #[tauri::command]
-pub async fn clear_app_data(serial: String, package: String) -> Result<String, String> {
+pub async fn clear_app_data(handle: tauri::AppHandle, serial: String, package: String) -> Result<String, String> {
     validate_package(&package).map_err(String::from)?;
     
+    let adb = get_adb_path(&handle);
     let cmd = format!("pm clear {}", package);
-    let stdout = run_adb_shell(&serial, &cmd).await.map_err(String::from)?;
+    let stdout = run_adb_shell(&adb, &serial, &cmd).await.map_err(String::from)?;
 
     if stdout.to_lowercase().contains("success") {
         Ok(format!("Cleared data for {}", package))
@@ -151,22 +157,24 @@ pub async fn clear_app_data(serial: String, package: String) -> Result<String, S
 }
 
 #[tauri::command]
-pub async fn force_stop_app(serial: String, package: String) -> Result<String, String> {
+pub async fn force_stop_app(handle: tauri::AppHandle, serial: String, package: String) -> Result<String, String> {
     validate_package(&package).map_err(String::from)?;
     
+    let adb = get_adb_path(&handle);
     let cmd = format!("am force-stop {}", package);
-    run_adb_shell(&serial, &cmd).await.map_err(String::from)?;
+    run_adb_shell(&adb, &serial, &cmd).await.map_err(String::from)?;
     
     Ok(format!("Force stopped {}", package))
 }
 
 #[tauri::command]
-pub async fn launch_app(serial: String, package: String) -> Result<String, String> {
+pub async fn launch_app(handle: tauri::AppHandle, serial: String, package: String) -> Result<String, String> {
     validate_package(&package).map_err(String::from)?;
     
+    let adb = get_adb_path(&handle);
     // Use monkey to launch the main intent of the app
     let cmd = format!("monkey -p {} -c android.intent.category.LAUNCHER 1", package);
-    let stdout = run_adb_shell(&serial, &cmd).await.map_err(String::from)?;
+    let stdout = run_adb_shell(&adb, &serial, &cmd).await.map_err(String::from)?;
     
     if stdout.contains("Events injected") || stdout.contains("monkey aborted") {
         Ok(format!("Launched {}", package))

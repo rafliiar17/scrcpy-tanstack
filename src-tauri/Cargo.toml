@@ -1,6 +1,6 @@
 [package]
 name = "scrcpygui-pro"
-version = "0.1.0"
+version = "0.1.1"
 description = "ScrcpyGUI Pro - Android Device Manager"
 authors = ["RAFZ"]
 edition = "2021"
@@ -26,4 +26,7 @@ tauri-plugin-dialog = { version = "2" }
 tauri-plugin-fs = "2"
 chrono = "0.4.44"
 lazy_static = "1.5.0"
+reqwest = { version = "0.12", features = ["json", "stream"] }
+zip = "2"
+fs_extra = "1"
 

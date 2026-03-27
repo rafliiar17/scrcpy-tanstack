@@ -57,3 +57,31 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+      - name: Package Static Binary
+        shell: bash
+        run: |
+          mkdir -p static-dist
+          if [ "${{ matrix.platform }}" == "windows-latest" ]; then
+            cp src-tauri/target/release/scrcpygui-pro.exe static-dist/ScrcpyGUI-Pro_Portable.exe
+          elif [ "${{ matrix.platform }}" == "macos-latest" ]; then
+            # ZIP the standalone .app for macOS portable use
+            cp -r "src-tauri/target/release/bundle/macos/ScrcpyGUI Pro.app" static-dist/
+          else
+            cp src-tauri/target/release/scrcpygui-pro static-dist/ScrcpyGUI-Pro_Portable
+          fi
+          cd static-dist
+          # Use different zip approach for different runner OS if necessary, but 'zip' is available on all GitHub Runner shells via bash
+          if [ "${{ matrix.platform }}" == "windows-latest" ]; then
+             powershell Compress-Archive -Path * -DestinationPath ../ScrcpyGUI-Pro-Win-Portable.zip
+          else
+             zip -r ../ScrcpyGUI-Pro-${{ matrix.platform }}-Portable.zip .
+          fi
+
+      - name: Upload Static Binary to Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: ScrcpyGUI-Pro-*-Portable.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
