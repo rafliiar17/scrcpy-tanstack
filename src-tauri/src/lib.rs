@@ -84,6 +84,11 @@ pub fn run() {
             commands::system::check_adb_drivers,
             commands::system::get_adb_status,
             commands::system::download_platform_tools,
+            commands::miunlock::exec_mi_unlock,
+            commands::miunlock::get_fastboot_device_info,
+            commands::miunlock::fastboot_unlock,
+            commands::miunlock::open_mi_login,
+            commands::miunlock::capture_mi_session_backend,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

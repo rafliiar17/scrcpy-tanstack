@@ -24,7 +24,6 @@ pub fn get_adb_path(handle: &tauri::AppHandle) -> std::path::PathBuf {
     use tauri::Manager;
     
     // 1. Check Bundled Resources (Internal)
-    // Structure: resources/bin/[os]/adb
     let resource_bin = handle.path().resource_dir().unwrap_or_default().join("resources").join("bin");
     
     #[cfg(target_os = "windows")]
@@ -51,6 +50,39 @@ pub fn get_adb_path(handle: &tauri::AppHandle) -> std::path::PathBuf {
     } else {
         // 3. Fallback to System PATH
         std::path::PathBuf::from("adb")
+    }
+}
+
+pub fn get_fastboot_path(handle: &tauri::AppHandle) -> std::path::PathBuf {
+    use tauri::Manager;
+    
+    // 1. Check Bundled Resources (Internal)
+    let resource_bin = handle.path().resource_dir().unwrap_or_default().join("resources").join("bin");
+    
+    #[cfg(target_os = "windows")]
+    let bundled_fb = resource_bin.join("windows").join("fastboot.exe");
+    #[cfg(target_os = "linux")]
+    let bundled_fb = resource_bin.join("linux").join("fastboot");
+    #[cfg(target_os = "macos")]
+    let bundled_fb = resource_bin.join("macos").join("fastboot");
+
+    if bundled_fb.exists() {
+        return bundled_fb;
+    }
+
+    // 2. Check App Local Data (Updates)
+    let local_bin = handle.path().app_local_data_dir().unwrap_or_default().join("bin");
+    
+    #[cfg(target_os = "windows")]
+    let local_fb = local_bin.join("platform-tools").join("fastboot.exe");
+    #[cfg(not(target_os = "windows"))]
+    let local_fb = local_bin.join("platform-tools").join("fastboot");
+
+    if local_fb.exists() {
+        local_fb
+    } else {
+        // 3. Fallback to System PATH
+        std::path::PathBuf::from("fastboot")
     }
 }
 

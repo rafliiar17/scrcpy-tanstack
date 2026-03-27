@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { DeviceInfo, DeviceDetails, MirrorOptions, MirrorStatus, AppInfo, FileInfo, ShellResult, CameraInfo } from "./config";
+import type { DeviceInfo, DeviceDetails, MirrorOptions, MirrorStatus, AppInfo, FileInfo, ShellResult, CameraInfo, MiUnlockSession, FastbootDeviceInfo, UnlockResult } from "./config";
 
 /**
  * Typed API object — single entry point for all Tauri command invocations.
@@ -144,4 +144,17 @@ export const api = {
 
   downloadPlatformTools: () =>
     invoke<string>("download_platform_tools"),
+
+  // ── Mi Unlock ──────────────────────────────────────────────────
+  getFastbootDeviceInfo: () =>
+    invoke<FastbootDeviceInfo>("get_fastboot_device_info"),
+
+  execMiUnlock: (session: MiUnlockSession, product: string, token: string, region: string) =>
+    invoke<UnlockResult>("exec_mi_unlock", { session, product, token, region }),
+
+  fastbootUnlock: (encryptDataHex: string) =>
+    invoke<string>("fastboot_unlock", { encrypt_data_hex: encryptDataHex }),
+
+  openMiLogin: () =>
+    invoke<void>("open_mi_login"),
 };

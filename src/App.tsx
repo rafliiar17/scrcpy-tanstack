@@ -21,6 +21,7 @@ const LogsPage = React.lazy(() => import("@/pages/logs").then(m => ({ default: m
 const SettingsPage = React.lazy(() => import("@/pages/settings").then(m => ({ default: m.SettingsPage })));
 const ShellPage = React.lazy(() => import("@/pages/shell").then(m => ({ default: m.ShellPage })));
 const ClipboardPage = React.lazy(() => import("./pages/clipboard").then(m => ({ default: m.ClipboardPage })));
+const MiUnlockPage = React.lazy(() => import("@/pages/mi-unlock").then(m => ({ default: m.MiUnlockPage })));
 
 // ── Simple hash-based routing for Tauri SPA ──────────────────────
 
@@ -38,6 +39,7 @@ const routes: Record<string, { title: string; component: React.FC }> = {
   "/system/logs": { title: "Logcat", component: LogsPage },
   "/system/settings": { title: "Settings", component: SettingsPage },
   "/system/shell": { title: "Interactive Shell", component: ShellPage },
+  "/system/unlock": { title: "Mi Unlock", component: MiUnlockPage },
 };
 
 export function App() {

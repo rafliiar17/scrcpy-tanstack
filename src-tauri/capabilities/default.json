@@ -1,10 +1,16 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Capability for the main window",
-  "windows": ["main"],
+  "description": "Capability for the main window and login popup",
+  "windows": ["main", "mi-login"],
   "permissions": [
     "core:default",
-    "opener:default"
+    "opener:default",
+    "core:event:allow-emit",
+    "core:event:allow-listen",
+    "core:webview:allow-webview-close",
+    "core:webview:allow-get-all-webviews",
+    "core:window:allow-close",
+    "core:window:allow-get-all-windows"
   ]
 }

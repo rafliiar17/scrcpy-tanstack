@@ -11,6 +11,7 @@ import {
   Smartphone,
   Terminal,
   Clipboard,
+  ShieldCheck,
 } from "lucide-react";
 
 import {
@@ -52,6 +53,7 @@ const navSystem = [
   { title: "Logcat", icon: ScrollText, url: "#/system/logs" },
   { title: "Shell", icon: Terminal, url: "#/system/shell" },
   { title: "Settings", icon: Settings, url: "#/system/settings" },
+  { title: "Mi Unlock", icon: ShieldCheck, url: "#/system/unlock" },
 ];
 
 // ── Component ────────────────────────────────────────────────────

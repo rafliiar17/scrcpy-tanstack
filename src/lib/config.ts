@@ -76,6 +76,28 @@ export interface ShellResult {
   exit_code: number;
 }
 
+export interface MiUnlockSession {
+  pass_token: string;
+  service_token: string;
+  user_id: string;
+  device_id: string;
+  ssecurity: string;
+  location_url: string;
+  nonce: string;
+}
+
+export interface FastbootDeviceInfo {
+  product: string;
+  token: string;
+}
+
+export interface UnlockResult {
+  product: string;
+  code: number;
+  desc: string;
+  encrypt_data?: string;
+}
+
 import appConfig from "../../app.json";
 
 // ── App Metadata ─────────────────────────────────────────────────
