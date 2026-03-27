@@ -55,7 +55,7 @@ export function ShellPage() {
     
     xtermRef.current = term;
 
-    term.writeln(`\r\n\u001b[34m[SC] \u001b[32mConnected to device: [${serial}]\u001b[0m\r\n`);
+    term.writeln(`\r\n\u001b[34m[SC] \u001b[33mConnecting to interactive shell on device: [${serial}]...\u001b[0m\r\n`);
 
     let unlistenFn: (() => void) | null = null;
 
@@ -73,10 +73,12 @@ export function ShellPage() {
           term.write(event.payload);
         });
         
-        // Wake up shell (Not needed anymore with -tt, but sometimes helpful for initial prompt)
-        // await api.writeToShell(serial, "\n");
+        term.writeln(`\u001b[34m[SC] \u001b[32mSession established.\u001b[0m\r\n`);
+        
+        // Wake up shell (sometimes helpful for initial prompt)
+        await api.writeToShell(serial, "\n");
       } catch (err) {
-        term.writeln(`\r\n\u001b[31mError: ${err}\u001b[0m`);
+        term.writeln(`\r\n\u001b[31m[SC] Error initializing shell: ${err}\u001b[0m`);
       }
     };
 

@@ -4,7 +4,7 @@
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-FFC131?style=for-the-badge&logo=tauri)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
 
-**ScrcpyGUI Pro** is a premium, professional-grade Android Device Manager built with **Tauri v2**, **React 19**, and **Rust**. It provides a high-performance, low-latency interface for mirroring, managing, and debugging Android devices.
+**ScrcpyGUI Pro** is a premium, professional-grade Android Device Manager built with **Tauri v2**, **Tanstack Ecosystem**, and **Rust**. It provides a high-performance, low-latency interface for mirroring, managing, and debugging Android devices.
 
 ## ✨ Key Features
 
@@ -19,7 +19,7 @@
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v18+)
+- [Bun](https://bun.sh/) (v1.3.11+)
 - [Rust](https://www.rust-lang.org/) (v1.75+)
 - [ADB (Android Debug Bridge)](https://developer.android.com/tools/adb) installed and in your PATH.
 

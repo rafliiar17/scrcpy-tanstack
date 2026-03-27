@@ -105,7 +105,7 @@ export const LIVESTREAM_DEFAULTS = {
   platform: "YouTube",
   bitrate: "3000k",
   resolution: "1280x720",
-  fps: "30",
+  fps: "60",
 } as const;
 
 export const LIVESTREAM_PLATFORMS = ["YouTube", "Custom"] as const;
@@ -143,7 +143,12 @@ export const CAMERA_FPS = [
 
 export const CAMERA_BITRATES = [
   { value: "auto", label: "Auto" },
+  { value: "64M", label: "64 Mbps" },
+  { value: "32M", label: "32 Mbps" },
+  { value: "24M", label: "24 Mbps" },
+  { value: "20M", label: "20 Mbps" },
   { value: "16M", label: "16 Mbps" },
+  { value: "12M", label: "12 Mbps" },
   { value: "8M", label: "8 Mbps" },
   { value: "4M", label: "4 Mbps" },
   { value: "2M", label: "2 Mbps" },

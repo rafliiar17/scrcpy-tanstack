@@ -1,18 +1,12 @@
 import { useSelectedDevice, useDeviceInfo } from "@/hooks/use-devices";
 import { useSystem } from "@/hooks/use-system";
 import { Smartphone, Monitor, Package, FolderOpen, Power } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export function DashboardPage() {
   const { selectedDevice } = useSelectedDevice();
   const { data: deviceInfo } = useDeviceInfo(selectedDevice?.serial ?? null);
   const { rebootDevice, isRebooting } = useSystem();
-
-  const handleReboot = () => {
-    if (!selectedDevice) return;
-    if (confirm(`Are you sure you want to reboot ${selectedDevice.model}?`)) {
-      rebootDevice({ serial: selectedDevice.serial, mode: "" }).catch(console.error);
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -73,15 +67,27 @@ export function DashboardPage() {
           <h3 className="font-semibold">Files</h3>
           <p className="text-sm text-muted-foreground">Browse device storage</p>
         </a>
-        <button 
-          onClick={handleReboot}
-          disabled={!selectedDevice || isRebooting}
-          className="group rounded-xl border bg-card p-6 shadow-sm transition-colors hover:bg-accent hover:border-red-500/50 text-left disabled:opacity-50"
-        >
-          <Power className={`size-6 mb-3 ${isRebooting ? "animate-pulse text-red-500" : "text-muted-foreground group-hover:text-red-500"}`} />
-          <h3 className="font-semibold">{isRebooting ? "Rebooting..." : "Reboot"}</h3>
-          <p className="text-sm text-muted-foreground">Restart Android device</p>
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            disabled={!selectedDevice || isRebooting}
+            className="group rounded-xl border bg-card p-6 shadow-sm transition-colors hover:bg-accent hover:border-red-500/50 text-left disabled:opacity-50"
+          >
+            <Power className={`size-6 mb-3 ${isRebooting ? "animate-pulse text-red-500" : "text-muted-foreground group-hover:text-red-500"}`} />
+            <h3 className="font-semibold">{isRebooting ? "Rebooting..." : "Reboot"}</h3>
+            <p className="text-sm text-muted-foreground">Restart Android device</p>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => selectedDevice && rebootDevice({ serial: selectedDevice.serial, mode: "" })}>
+              System
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => selectedDevice && rebootDevice({ serial: selectedDevice.serial, mode: "recovery" })}>
+              Recovery
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => selectedDevice && rebootDevice({ serial: selectedDevice.serial, mode: "bootloader" })}>
+              Bootloader
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

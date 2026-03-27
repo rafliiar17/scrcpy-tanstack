@@ -72,6 +72,108 @@ pub async fn enable_tcpip(serial: String) -> Result<String, String> {
     }
 }
 
+// ── Zero-Config Wireless ADB ────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize)]
+pub struct MdnsDevice {
+    pub name: String,
+    pub service_type: String,
+    pub address: String,
+}
+
+#[tauri::command]
+pub async fn adb_pair(ip: String, port: String, code: String) -> Result<String, String> {
+    let target = format!("{}:{}", ip, port);
+
+    let mut child = std::process::Command::new(ADB_BIN)
+        .args(["pair", &target])
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to start adb pair: {}", e))?;
+
+    // Write the pairing code to stdin
+    if let Some(mut stdin) = child.stdin.take() {
+        use std::io::Write;
+        let _ = writeln!(stdin, "{}", code);
+    }
+
+    let output = child
+        .wait_with_output()
+        .map_err(|e| format!("Failed to wait for adb pair: {}", e))?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let combined = format!("{}{}", stdout, stderr);
+
+    if combined.contains("Successfully paired") {
+        Ok(combined.trim().to_string())
+    } else {
+        Err(combined.trim().to_string())
+    }
+}
+
+#[tauri::command]
+pub async fn adb_mdns_discover() -> Result<Vec<MdnsDevice>, String> {
+    // `adb mdns services` lists discovered services
+    let output = Command::new(ADB_BIN)
+        .args(["mdns", "services"])
+        .output()
+        .await
+        .map_err(|e| format!("Failed to run adb mdns: {}", e))?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let mut devices = Vec::new();
+
+    for line in stdout.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with("List of") {
+            continue;
+        }
+        // Format: "service_name\t_adb-tls-pairing._tcp.\t192.168.1.5:38753"
+        let parts: Vec<&str> = line.split('\t').collect();
+        if parts.len() >= 3 {
+            devices.push(MdnsDevice {
+                name: parts[0].trim().to_string(),
+                service_type: parts[1].trim().to_string(),
+                address: parts[2].trim().to_string(),
+            });
+        }
+    }
+
+    Ok(devices)
+}
+
+// ── ADB Proxy / Server ──────────────────────────────────────────
+
+#[tauri::command]
+pub async fn set_adb_server(host: String, port: String) -> Result<String, String> {
+    if host.is_empty() {
+        // Reset to local
+        std::env::remove_var("ANDROID_ADB_SERVER_ADDRESS");
+        std::env::remove_var("ANDROID_ADB_SERVER_PORT");
+        // Kill and restart local server
+        let _ = Command::new(ADB_BIN).args(["kill-server"]).output().await;
+        let _ = Command::new(ADB_BIN).args(["start-server"]).output().await;
+        Ok("Reset to local ADB server".into())
+    } else {
+        std::env::set_var("ANDROID_ADB_SERVER_ADDRESS", &host);
+        std::env::set_var("ANDROID_ADB_SERVER_PORT", if port.is_empty() { "5037" } else { &port });
+        // Restart server with new config
+        let _ = Command::new(ADB_BIN).args(["kill-server"]).output().await;
+        let _ = Command::new(ADB_BIN).args(["start-server"]).output().await;
+        Ok(format!("ADB server set to {}:{}", host, if port.is_empty() { "5037" } else { &port }))
+    }
+}
+
+#[tauri::command]
+pub async fn get_adb_server() -> Result<(String, String), String> {
+    let host = std::env::var("ANDROID_ADB_SERVER_ADDRESS").unwrap_or_default();
+    let port = std::env::var("ANDROID_ADB_SERVER_PORT").unwrap_or_else(|_| "5037".into());
+    Ok((host, port))
+}
+
 #[tauri::command]
 pub async fn reboot_device(serial: String, mode: String) -> Result<String, String> {
     let mut args = vec!["-s", &serial, "reboot"];
@@ -171,8 +273,13 @@ pub async fn start_shell(
     serial: String,
 ) -> Result<(), String> {
     let mut registry = state.processes.lock().await;
-    if registry.shell.contains_key(&serial) {
-        return Ok(());
+    if let Some(child) = registry.shell.get_mut(&serial) {
+        if let Ok(None) = child.try_wait() {
+            return Ok(());
+        } else {
+            registry.shell.remove(&serial);
+            registry.shell_stdin.remove(&serial);
+        }
     }
 
     println!("Spawning interactive shell for [{}]", serial);

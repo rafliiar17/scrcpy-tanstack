@@ -12,6 +12,7 @@ import { formatBytes } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useSettings } from "@/hooks/use-settings";
 import React from "react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -94,10 +95,12 @@ export function FilesPage() {
 
   const { addDownload, completeDownload, failDownload, downloads } = useDownloads();
 
+  const { settings } = useSettings();
+
   const handleDownload = async (file: { name: string; size?: number }) => {
     try {
       const remotePath = `${currentPath.endsWith("/") ? currentPath : currentPath + "/"}${file.name}`;
-      const localPath = `~/Downloads/${file.name}`;
+      const localPath = `${settings.downloadPath.replace(/\/$/, "")}/${file.name}`;
       
       const downloadId = `files-${Date.now()}-${file.name}`;
       addDownload(downloadId, file.name, file.size ?? 0);

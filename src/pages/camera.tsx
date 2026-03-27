@@ -2,12 +2,20 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Camera, RefreshCw, Play, Video, CircleDot, Square } from "lucide-react";
 import { useSelectedDevice } from "@/hooks/use-devices";
-import { useMirror, defaultMirrorOptions } from "@/hooks/use-mirror";
+import { useMirror, useMirrorStatus, defaultMirrorOptions } from "@/hooks/use-mirror";
 import { api } from "@/lib/tauri";
+import { useSettings } from "@/hooks/use-settings";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { CameraInfo } from "@/lib/config";
 import {
   CAMERA_SENSORS,
@@ -19,8 +27,11 @@ import {
 
 export function CameraPage() {
   const { selectedDevice } = useSelectedDevice();
+  const { settings } = useSettings();
   const serial = selectedDevice?.serial;
   const { startMirror, stopMirror, isStarting, isStopping } = useMirror(serial ?? null);
+  const { data: status } = useMirrorStatus(serial ?? null);
+  const isRunning = status?.running;
 
   // Camera settings state
   const [facing, setFacing] = useState("auto");
@@ -28,6 +39,7 @@ export function CameraPage() {
   const [cameraFps, setCameraFps] = useState("60");
   const [cameraBitrate, setCameraBitrate] = useState("auto");
   const [cameraRotation, setCameraRotation] = useState("0");
+  const [cameraCodec, setCameraCodec] = useState("h265");
   const [noAudio, setNoAudio] = useState(true);
   const [selectedCamera, setSelectedCamera] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -52,6 +64,7 @@ export function CameraPage() {
       max_fps: fpsNum,
       bitrate: bitrateNum,
       rotation: cameraRotation,
+      codec: cameraCodec,
       no_audio: noAudio,
     };
   };
@@ -67,7 +80,7 @@ export function CameraPage() {
   const handleStartRecord = async () => {
     if (!serial) return;
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-    const filename = `camera_rec_${timestamp}.mp4`;
+    const filename = `${settings.recordingsPath.replace(/\/$/, "")}/camera_rec_${timestamp}.mp4`;
     setRecordFile(filename);
     setIsRecording(true);
     try {
@@ -162,84 +175,104 @@ export function CameraPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-x-6 gap-y-5">
             {/* Sensor / Facing */}
             <div>
               <label className="text-xs font-bold tracking-widest text-muted-foreground uppercase mb-2 block">Sensor</label>
-              <select
-                value={facing}
-                onChange={(e) => setFacing(e.target.value)}
-                className="w-full rounded-md border bg-background px-3 py-2.5 text-sm"
-              >
-                {CAMERA_SENSORS.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
-              </select>
+              <Select value={facing} onValueChange={(val) => setFacing(val || "")}>
+                <SelectTrigger className="w-full bg-background h-10">
+                  <SelectValue placeholder="Select sensor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CAMERA_SENSORS.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Resolution */}
             <div>
               <label className="text-xs font-bold tracking-widest text-muted-foreground uppercase mb-2 block">Resolution</label>
-              <select
-                value={cameraSize}
-                onChange={(e) => setCameraSize(e.target.value)}
-                className="w-full rounded-md border bg-background px-3 py-2.5 text-sm"
-              >
-                {CAMERA_RESOLUTIONS.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
-              </select>
+              <Select value={cameraSize} onValueChange={(val) => setCameraSize(val || "")}>
+                <SelectTrigger className="w-full bg-background h-8 text-xs">
+                  <SelectValue placeholder="Select resolution" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CAMERA_RESOLUTIONS.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Frame Rate */}
             <div>
               <label className="text-xs font-bold tracking-widest text-muted-foreground uppercase mb-2 block">Frame Rate</label>
-              <select
-                value={cameraFps}
-                onChange={(e) => setCameraFps(e.target.value)}
-                className="w-full rounded-md border bg-background px-3 py-2.5 text-sm"
-              >
-                {CAMERA_FPS.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
-              </select>
+              <Select value={cameraFps} onValueChange={(val) => setCameraFps(val || "")}>
+                <SelectTrigger className="w-full bg-background h-8 text-xs">
+                  <SelectValue placeholder="Select frame rate" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CAMERA_FPS.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Bitrate */}
             <div>
               <label className="text-xs font-bold tracking-widest text-muted-foreground uppercase mb-2 block">Bitrate</label>
-              <select
-                value={cameraBitrate}
-                onChange={(e) => setCameraBitrate(e.target.value)}
-                className="w-full rounded-md border bg-background px-3 py-2.5 text-sm"
-              >
-                {CAMERA_BITRATES.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
-              </select>
+              <Select value={cameraBitrate} onValueChange={(val) => setCameraBitrate(val || "")}>
+                <SelectTrigger className="w-full bg-background h-8 text-xs">
+                  <SelectValue placeholder="Select bitrate" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CAMERA_BITRATES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Rotation */}
             <div>
               <label className="text-xs font-bold tracking-widest text-muted-foreground uppercase mb-2 block">Rotation</label>
-              <select
-                value={cameraRotation}
-                onChange={(e) => setCameraRotation(e.target.value)}
-                className="w-full rounded-md border bg-background px-3 py-2.5 text-sm"
-              >
-                {CAMERA_ROTATIONS.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
-              </select>
+              <Select value={cameraRotation} onValueChange={(val) => setCameraRotation(val || "")}>
+                <SelectTrigger className="w-full bg-background h-8 text-xs">
+                  <SelectValue placeholder="Select rotation" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CAMERA_ROTATIONS.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Video Codec */}
+            <div>
+              <label className="text-xs font-bold tracking-widest text-muted-foreground uppercase mb-2 block">Video Codec</label>
+              <Select value={cameraCodec} onValueChange={(val) => setCameraCodec(val || "h264")}>
+                <SelectTrigger className="w-full bg-background h-8 text-xs">
+                  <SelectValue placeholder="Select codec" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="h264">H.264 (Compatible)</SelectItem>
+                  <SelectItem value="h265">H.265 (HEVC)</SelectItem>
+                  <SelectItem value="av1">AV1</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Selected Camera */}
-            <div>
+            {/* <div>
               <label className="text-xs font-bold tracking-widest text-muted-foreground uppercase mb-2 block">Camera ID</label>
               <div className="rounded-md border bg-muted/30 px-3 py-2.5 text-sm">
                 {selectedCamera ? `Camera ${selectedCamera}` : "Auto (default)"}
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Audio Toggle */}
@@ -260,17 +293,32 @@ export function CameraPage() {
 
           {/* Actions */}
           <div className="grid gap-3 md:grid-cols-2">
-            <Button
-              size="lg"
-              onClick={handleStartCamera}
-              disabled={isStarting || isRecording}
-            >
-              {isStarting ? (
-                <><RefreshCw className="size-4 mr-2 animate-spin" /> Starting...</>
-              ) : (
-                <><Play className="size-4 mr-2" /> Start Camera Stream</>
-              )}
-            </Button>
+            {isRunning ? (
+              <Button
+                size="lg"
+                variant="destructive"
+                onClick={() => stopMirror()}
+                disabled={isStopping}
+              >
+                {isStopping ? (
+                  <><RefreshCw className="size-4 mr-2 animate-spin" /> Stopping...</>
+                ) : (
+                  <><Square className="size-4 mr-2" /> Stop Camera Stream</>
+                )}
+              </Button>
+            ) : (
+              <Button
+                size="lg"
+                onClick={handleStartCamera}
+                disabled={isStarting || isRecording}
+              >
+                {isStarting ? (
+                  <><RefreshCw className="size-4 mr-2 animate-spin" /> Starting...</>
+                ) : (
+                  <><Play className="size-4 mr-2" /> Start Camera Stream</>
+                )}
+              </Button>
+            )}
 
             {!isRecording ? (
               <Button

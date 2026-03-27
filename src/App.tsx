@@ -16,6 +16,7 @@ import { MonitorPage } from "@/pages/monitor";
 import { LogsPage } from "@/pages/logs";
 import { SettingsPage } from "@/pages/settings";
 import { ShellPage } from "@/pages/shell";
+import { CommandPalette } from "@/components/command-palette";
 
 // ── Simple hash-based routing for Tauri SPA ──────────────────────
 
@@ -42,6 +43,7 @@ export function App() {
   const PageComponent = route.component;
 
   return (
+    <>
     <TooltipProvider>
       <DownloadProvider>
         <SidebarProvider defaultOpen={true}>
@@ -59,5 +61,7 @@ export function App() {
         </SidebarProvider>
       </DownloadProvider>
     </TooltipProvider>
+    <CommandPalette />
+    </>
   );
 }

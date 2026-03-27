@@ -34,6 +34,18 @@ export function useSystem() {
     mutationFn: ({ serial, command }: { serial: string; command: string }) => api.shellRun(serial, command),
   });
 
+  const pairMutation = useMutation({
+    mutationFn: ({ ip, port, code }: { ip: string; port: string; code: string }) =>
+      api.adbPair(ip, port, code),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["devices"] });
+    },
+  });
+
+  const discoverMutation = useMutation({
+    mutationFn: () => api.adbMdnsDiscover(),
+  });
+
   return {
     tcpipConnect: connectMutation.mutateAsync,
     isConnecting: connectMutation.isPending,
@@ -49,6 +61,13 @@ export function useSystem() {
 
     shellRun: shellMutation.mutateAsync,
     isRunningShell: shellMutation.isPending,
+
+    pairDevice: pairMutation.mutateAsync,
+    isPairing: pairMutation.isPending,
+
+    discoverDevices: discoverMutation.mutateAsync,
+    isDiscovering: discoverMutation.isPending,
+    discoveredDevices: discoverMutation.data ?? [],
     
     startLogcat: api.startLogcat,
     stopLogcat: api.stopLogcat,

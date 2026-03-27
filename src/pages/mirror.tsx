@@ -104,7 +104,7 @@ export function MirrorPage() {
                 <div className="space-y-3">
                   <Label>Max Resolution</Label>
                   <Select value={options.resolution} onValueChange={(v: string | null) => v && updateOption("resolution", v)}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full h-8 text-xs">
                       <SelectValue placeholder="Original (Default)" />
                     </SelectTrigger>
                     <SelectContent>
@@ -119,7 +119,7 @@ export function MirrorPage() {
                 <div className="space-y-3">
                   <Label>Video Codec</Label>
                   <Select value={options.codec} onValueChange={(v: string | null) => v && updateOption("codec", v)}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full h-8 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

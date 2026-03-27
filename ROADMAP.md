@@ -6,10 +6,10 @@ This document outlines the vision and future development plans for **ScrcpyGUI P
 
 ## 🚀 Q2 2026 — Connectivity & Customization
 
-- [ ] **Zero-Config Wireless ADB**: Automatic discovery and pairing of devices over Wi-Fi (using QR code or pairing code).
-- [ ] **Global Search**: Search for files, apps, and logs across all connected devices from a single search bar.
-- [ ] **Dynamic Theme Engine**: Custom color palettes, glassmorphism intensities, and font choices (supporting Geist, Inter, and more).
-- [ ] **ADB Proxy Support**: Connect to remote devices behind local or global proxies.
+- [x] **Zero-Config Wireless ADB**: Automatic discovery and pairing of devices over Wi-Fi (using QR code or pairing code).
+- [x] **Global Search**: Search for files, apps, and logs across all connected devices from a single search bar.
+- [x] **Dynamic Theme Engine**: Custom color palettes, glassmorphism intensities, and font choices (supporting Geist, Inter, and more).
+- [x] **ADB Proxy Support**: Connect to remote devices behind local or global proxies.
 
 ## ⚡ Q3 2026 — Pro Tools & Performance
 

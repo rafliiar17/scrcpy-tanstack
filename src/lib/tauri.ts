@@ -83,6 +83,18 @@ export const api = {
   enableTcpip: (serial: string) =>
     invoke<string>("enable_tcpip", { serial }),
 
+  adbPair: (ip: string, port: string, code: string) =>
+    invoke<string>("adb_pair", { ip, port, code }),
+
+  adbMdnsDiscover: () =>
+    invoke<{ name: string; service_type: string; address: string }[]>("adb_mdns_discover"),
+
+  setAdbServer: (host: string, port: string) =>
+    invoke<string>("set_adb_server", { host, port }),
+
+  getAdbServer: () =>
+    invoke<[string, string]>("get_adb_server"),
+
   rebootDevice: (serial: string, mode: string) =>
     invoke<string>("reboot_device", { serial, mode }),
 

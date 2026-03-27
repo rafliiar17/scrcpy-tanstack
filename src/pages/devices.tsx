@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { QUERY_STALE_TIME } from "@/lib/config";
 
 export function DevicesPage() {
@@ -342,13 +343,22 @@ export function DevicesPage() {
                           <Unplug className="size-3 mr-1" /> Disconnect
                         </Button>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => rebootDevice({ serial: device.serial, mode: "" })}
-                      >
-                        <Power className="size-3 mr-1" /> Reboot
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 px-3 text-xs w-full text-left">
+                          <Power className="size-3 mr-1" /> Reboot
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => rebootDevice({ serial: device.serial, mode: "" })}>
+                            System
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => rebootDevice({ serial: device.serial, mode: "recovery" })}>
+                            Recovery
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => rebootDevice({ serial: device.serial, mode: "bootloader" })}>
+                            Bootloader
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 );
