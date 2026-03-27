@@ -76,17 +76,19 @@ export interface ShellResult {
   exit_code: number;
 }
 
+import appConfig from "../../app.json";
+
 // ── App Metadata ─────────────────────────────────────────────────
 
-export const APP_NAME = "ScrcpyGUI Pro" as const;
-export const APP_VERSION = "0.1.0" as const;
+export const APP_NAME = appConfig.productName;
+export const APP_VERSION = appConfig.version;
 
 // ── Mirror ───────────────────────────────────────────────────────
 
 export const MIRROR_DEFAULTS = {
   bitrate: 8,
   fps: 60,
-  codec: "h264" as const,
+  codec: "h265" as const,
   fullscreen: false,
   alwaysOnTop: false,
   stayAwake: true,

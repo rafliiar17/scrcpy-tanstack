@@ -1,6 +1,6 @@
 [package]
 name = "scrcpygui-pro"
-version = "0.1.1"
+version = "0.1.2"
 description = "ScrcpyGUI Pro - Android Device Manager"
 authors = ["RAFZ"]
 edition = "2021"

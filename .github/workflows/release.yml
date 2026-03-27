@@ -12,13 +12,15 @@ jobs:
   release:
     permissions:
       contents: write
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     strategy:
       fail-fast: false
       matrix:
         include:
           - platform: "macos-latest" # Although not requested, good to have if needed later
             args: ""
-          - platform: "ubuntu-22.04"
+          - platform: "ubuntu-24.04"
             args: ""
           - platform: "windows-latest"
             args: ""
@@ -39,10 +41,10 @@ jobs:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-22.04'
+        if: matrix.platform == 'ubuntu-24.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libfuse2t64
 
       - name: install frontend dependencies
         run: bun install
@@ -66,7 +68,7 @@ jobs:
             cp src-tauri/target/release/scrcpygui-pro.exe static-dist/ScrcpyGUI-Pro_Portable.exe
           elif [ "${{ matrix.platform }}" == "macos-latest" ]; then
             # ZIP the standalone .app for macOS portable use
-            cp -r "src-tauri/target/release/bundle/macos/ScrcpyGUI Pro.app" static-dist/
+            cp -r "src-tauri/target/release/bundle/macos/ScrcpyGUI-Pro.app" static-dist/
           else
             cp src-tauri/target/release/scrcpygui-pro static-dist/ScrcpyGUI-Pro_Portable
           fi

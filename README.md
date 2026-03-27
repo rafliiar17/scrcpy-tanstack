@@ -1,4 +1,4 @@
-# ScrcpyGUI Pro v0.1.1
+# ScrcpyGUI Pro v0.1.2
 
 ![ScrcpyGUI Pro Banner](https://img.shields.io/badge/Scrcpy-Pro-blue?style=for-the-badge&logo=android)
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-FFC131?style=for-the-badge&logo=tauri)
@@ -29,7 +29,7 @@
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-username/scrcpy-tanstack.git
+   git clone https://github.com/rafliiar17/scrcpy-tanstack.git
    cd scrcpy-tanstack
    ```
 

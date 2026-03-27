@@ -1,12 +1,12 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "ScrcpyGUI Pro",
-  "version": "0.1.1",
+  "productName": "ScrcpyGUI-Pro",
+  "version": "0.1.2",
   "identifier": "com.rafz.scrcpygui-pro",
   "build": {
-    "beforeDevCommand": "bun run dev",
+    "beforeDevCommand": "bun ./scripts/prepare-binaries.js && bun run dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "bun run build",
+    "beforeBuildCommand": "bun run build && bun ./scripts/prepare-binaries.js",
     "frontendDist": "../dist"
   },
   "app": {
@@ -37,7 +37,7 @@
       "app"
     ],
     "resources": [
-      "resources/bin/**/*"
+      "resources/bin-bundled/**/*"
     ],
     "icon": [
       "icons/32x32.png",

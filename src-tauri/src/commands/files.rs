@@ -3,7 +3,6 @@ use tokio::process::Command;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tokio::io::AsyncBufReadExt;
 use tauri::Emitter;
 use crate::config::get_adb_path;
 

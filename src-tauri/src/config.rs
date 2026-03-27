@@ -9,6 +9,10 @@ lazy_static! {
     pub static ref APP_LOG_TX: broadcast::Sender<String> = broadcast::channel(1024).0;
 }
 
+// ── App Metadata ─────────────────────────────────────────────────
+pub const APP_NAME: &str = env!("CARGO_PKG_NAME");
+pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 // ── Binary Paths ─────────────────────────────────────────────────
 // ── Binary Paths ─────────────────────────────────────────────────
 pub const SCRCPY_BIN: &str = "scrcpy";

@@ -520,7 +520,7 @@ pub async fn get_adb_status(handle: tauri::AppHandle) -> Result<AdbStatus, Strin
 }
 
 #[tauri::command]
-pub async fn download_platform_tools(handle: tauri::AppHandle) -> Result<String, String> {
+pub async fn download_platform_tools(_handle: tauri::AppHandle) -> Result<String, String> {
     #[cfg(target_os = "windows")]
     {
         use tauri::Manager;
