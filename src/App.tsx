@@ -1,23 +1,26 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { DownloadProvider } from "@/components/download-provider";
-import { DashboardPage } from "@/pages/dashboard";
-import { MirrorPage } from "@/pages/mirror";
-import { LivestreamPage } from "@/pages/livestream";
-import { CameraPage } from "@/pages/camera";
-import { DevicesPage } from "@/pages/devices";
-import { AppsPage } from "@/pages/apps";
-import { FilesPage } from "@/pages/files";
-import { GalleryPage } from "@/pages/gallery";
-import { MonitorPage } from "@/pages/monitor";
-import { LogsPage } from "@/pages/logs";
-import { SettingsPage } from "@/pages/settings";
-import { ShellPage } from "@/pages/shell";
-import { ClipboardPage } from "./pages/clipboard";
 import { CommandPalette } from "@/components/command-palette";
+import { useHashRoute } from "@/hooks/use-hash-route";
+
+// Lazy-loaded components for code-splitting
+const DashboardPage = React.lazy(() => import("@/pages/dashboard").then(m => ({ default: m.DashboardPage })));
+const MirrorPage = React.lazy(() => import("@/pages/mirror").then(m => ({ default: m.MirrorPage })));
+const LivestreamPage = React.lazy(() => import("@/pages/livestream").then(m => ({ default: m.LivestreamPage })));
+const CameraPage = React.lazy(() => import("@/pages/camera").then(m => ({ default: m.CameraPage })));
+const DevicesPage = React.lazy(() => import("@/pages/devices").then(m => ({ default: m.DevicesPage })));
+const AppsPage = React.lazy(() => import("@/pages/apps").then(m => ({ default: m.AppsPage })));
+const FilesPage = React.lazy(() => import("@/pages/files").then(m => ({ default: m.FilesPage })));
+const GalleryPage = React.lazy(() => import("@/pages/gallery").then(m => ({ default: m.GalleryPage })));
+const MonitorPage = React.lazy(() => import("@/pages/monitor").then(m => ({ default: m.MonitorPage })));
+const LogsPage = React.lazy(() => import("@/pages/logs").then(m => ({ default: m.LogsPage })));
+const SettingsPage = React.lazy(() => import("@/pages/settings").then(m => ({ default: m.SettingsPage })));
+const ShellPage = React.lazy(() => import("@/pages/shell").then(m => ({ default: m.ShellPage })));
+const ClipboardPage = React.lazy(() => import("./pages/clipboard").then(m => ({ default: m.ClipboardPage })));
 
 // ── Simple hash-based routing for Tauri SPA ──────────────────────
 
@@ -37,8 +40,6 @@ const routes: Record<string, { title: string; component: React.FC }> = {
   "/system/shell": { title: "Interactive Shell", component: ShellPage },
 };
 
-import { useHashRoute } from "@/hooks/use-hash-route";
-
 export function App() {
   const currentPath = useHashRoute();
   const route = routes[currentPath] ?? routes["/"];
@@ -57,7 +58,9 @@ export function App() {
               <h1 className="text-sm font-medium">{route.title}</h1>
             </header>
             <main className="flex-1 overflow-auto p-6">
-              <PageComponent />
+              <Suspense fallback={<div className="flex h-full items-center justify-center p-6 text-muted-foreground">Loading module...</div>}>
+                <PageComponent />
+              </Suspense>
             </main>
           </SidebarInset>
         </SidebarProvider>

@@ -4,7 +4,7 @@ use tokio::process::Child;
 use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 
-/// Registry of all running processes, keyed by device serial.
+#[derive(Default)]
 pub struct ProcessRegistry {
     pub mirror: HashMap<String, Child>,
     pub logcat: HashMap<String, Child>,
@@ -14,21 +14,6 @@ pub struct ProcessRegistry {
     pub shell: HashMap<String, Child>,
     pub shell_stdin: HashMap<String, tokio::process::ChildStdin>,
     pub clipboard_sync: HashMap<String, Child>,
-}
-
-impl Default for ProcessRegistry {
-    fn default() -> Self {
-        Self {
-            mirror: HashMap::new(),
-            logcat: HashMap::new(),
-            livestream: HashMap::new(),
-            camera: HashMap::new(),
-            monitor: HashMap::new(),
-            shell: HashMap::new(),
-            shell_stdin: HashMap::new(),
-            clipboard_sync: HashMap::new(),
-        }
-    }
 }
 
 /// Global application state managed by Tauri.

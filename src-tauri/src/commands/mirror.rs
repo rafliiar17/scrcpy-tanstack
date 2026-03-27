@@ -181,9 +181,10 @@ fn build_mirror_args(opts: &MirrorOptions) -> Vec<String> {
         if source == "camera" {
             args.push("--video-source=camera".into());
             // camera-id and camera-facing are mutually exclusive
-            let has_id = opts.camera_id.as_ref().map_or(false, |id| !id.is_empty());
+            let has_id = opts.camera_id.as_ref().is_some_and(|id| !id.is_empty());
             if has_id {
-                args.push(format!("--camera-id={}", opts.camera_id.as_ref().unwrap()));
+                let camera_id = opts.camera_id.as_deref().unwrap_or_default();
+                args.push(format!("--camera-id={}", camera_id));
             } else if let Some(facing) = &opts.camera_facing {
                 if !facing.is_empty() && facing != "auto" {
                     args.push(format!("--camera-facing={}", facing));

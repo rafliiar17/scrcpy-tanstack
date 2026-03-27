@@ -35,9 +35,9 @@ lazy_static::lazy_static! {
 // ── Helpers ──────────────────────────────────────────────────────
 
 fn expand_tilde(path: &str) -> String {
-    if path.starts_with("~/") {
+    if let Some(stripped) = path.strip_prefix("~/") {
         if let Some(home) = std::env::var("HOME").ok().or_else(|| dirs::home_dir().map(|p| p.to_string_lossy().to_string())) {
-            return format!("{}/{}", home, &path[2..]);
+            return format!("{}/{}", home, stripped);
         }
     }
     path.to_string()
@@ -93,7 +93,7 @@ fn parse_ls_output(stdout: &str) -> Vec<FileInfo> {
                 name_idx = 7.min(parts.len() - 1);
             }
             
-            let name_parts: Vec<&str> = parts[name_idx..].iter().copied().collect();
+            let name_parts: Vec<&str> = parts[name_idx..].to_vec();
             let mut name = name_parts.join(" ");
             
             // Handle symlinks (e.g. "sdcard -> /storage/emulated/0")

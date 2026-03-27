@@ -491,24 +491,27 @@ pub async fn get_adb_status(handle: tauri::AppHandle) -> Result<AdbStatus, Strin
     let found = Command::new(&adb).arg("version").output().await.is_ok();
     
     let os = std::env::consts::OS.to_string();
-    let mut distro = None;
+    let distro = {
+        let mut d = None;
+        #[cfg(target_os = "linux")]
+        {
+            if let Ok(content) = std::fs::read_to_string("/etc/os-release") {
+                let content_lower = content.to_lowercase();
+                if content_lower.contains("ubuntu") || content_lower.contains("debian") {
+                    d = Some("debian".into());
+                } else if content_lower.contains("arch") {
+                    d = Some("arch".into());
+                } else if content_lower.contains("fedora") {
+                    d = Some("fedora".into());
+                }
+            }
+        }
+        d
+    };
 
     // Check if bundled
     let resource_dir = handle.path().resource_dir().unwrap_or_default();
     let bundled = adb.starts_with(resource_dir);
-
-    #[cfg(target_os = "linux")]
-    {
-        if let Ok(content) = std::fs::read_to_string("/etc/os-release") {
-            if content.to_lowercase().contains("ubuntu") || content.to_lowercase().contains("debian") {
-                distro = Some("debian".into());
-            } else if content.to_lowercase().contains("arch") {
-                distro = Some("arch".into());
-            } else if content.to_lowercase().contains("fedora") {
-                distro = Some("fedora".into());
-            }
-        }
-    }
 
     Ok(AdbStatus {
         found,
@@ -520,7 +523,10 @@ pub async fn get_adb_status(handle: tauri::AppHandle) -> Result<AdbStatus, Strin
 }
 
 #[tauri::command]
-pub async fn download_platform_tools(_handle: tauri::AppHandle) -> Result<String, String> {
+pub async fn download_platform_tools(handle: tauri::AppHandle) -> Result<String, String> {
+    #[cfg(not(target_os = "windows"))]
+    let _ = handle;
+
     #[cfg(target_os = "windows")]
     {
         use tauri::Manager;
@@ -547,15 +553,16 @@ pub async fn download_platform_tools(_handle: tauri::AppHandle) -> Result<String
             };
 
             if (*file.name()).ends_with('/') {
-                std::fs::create_dir_all(&outpath).unwrap();
+                std::fs::create_dir_all(&outpath).map_err(|e| format!("Gagal memuat direktori {}: {}", outpath.display(), e))?;
             } else {
                 if let Some(p) = outpath.parent() {
-                    if !p.exists() {
-                        std::fs::create_dir_all(p).unwrap();
+                    let p_path: &std::path::Path = p;
+                    if !p_path.exists() {
+                        std::fs::create_dir_all(p_path).map_err(|e| format!("Gagal memuat direktori parent {}: {}", p_path.display(), e))?;
                     }
                 }
-                let mut outfile = std::fs::File::create(&outpath).unwrap();
-                std::io::copy(&mut file, &mut outfile).unwrap();
+                let mut outfile = std::fs::File::create(&outpath).map_err(|e| format!("Gagal membuat file {}: {}", outpath.display(), e))?;
+                std::io::copy(&mut file, &mut outfile).map_err(|e| format!("Gagal menulis file {}: {}", outpath.display(), e))?;
             }
         }
 
