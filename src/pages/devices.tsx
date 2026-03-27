@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Smartphone, Usb, Wifi, RefreshCw, Power, Unplug, CheckCircle2, XCircle, Monitor, Plug, AlertCircle } from "lucide-react";
+import { Smartphone, Usb, Wifi, RefreshCw, Power, Unplug, CheckCircle2, Plug, AlertCircle } from "lucide-react";
 import { api } from "@/lib/tauri";
 import { useSelectedDevice } from "@/hooks/use-devices";
 import { useSystem } from "@/hooks/use-system";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -133,54 +134,57 @@ export function DevicesPage() {
       </div>
 
       {/* TCP/IP Connection Section */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <form onSubmit={handleConnect}>
+      <div className="grid gap-6 md:grid-cols-2 auto-rows-fr">
+        <Card className="flex flex-col">
+          <form onSubmit={handleConnect} className="flex flex-col h-full">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Wifi className="size-5 text-primary" />
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Wifi className="size-5 text-primary" />
+                </div>
                 Connect via WiFi
               </CardTitle>
-
               <CardDescription>
                 Connect to a device that already has ADB TCP/IP enabled.
               </CardDescription>
-              <br />
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <div className="space-y-1 flex-1">
-                  <label className="text-sm font-medium">IP Address</label>
+            <CardContent className="space-y-4 flex-1">
+              <div className="flex gap-4">
+                <div className="space-y-2 flex-1">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">IP Address</label>
                   <Input
                     placeholder="192.168.1.5"
                     value={ipAddress}
                     onChange={(e) => setIpAddress(e.target.value)}
+                    className="bg-muted/50 focus-visible:bg-background transition-colors"
                     required
                   />
                 </div>
-                <div className="space-y-1 w-24">
-                  <label className="text-sm font-medium">Port</label>
+                <div className="space-y-2 w-28">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Port</label>
                   <Input
                     placeholder="5555"
                     value={port}
                     onChange={(e) => setPort(e.target.value)}
+                    className="bg-muted/50 focus-visible:bg-background transition-colors"
                   />
                 </div>
               </div>
               {connectMessage && (
-                <div className={`p-3 rounded-md text-sm border ${connectMessage.type === "success" ? "bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400" : "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400"}`}>
-                  {connectMessage.text}
+                <div className={`p-4 rounded-xl text-sm border animate-in fade-in slide-in-from-top-1 duration-300 ${connectMessage.type === "success" ? "bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400" : "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400"}`}>
+                  <div className="flex items-center gap-2">
+                    {connectMessage.type === "success" ? <CheckCircle2 className="size-4" /> : <AlertCircle className="size-4" />}
+                    {connectMessage.text}
+                  </div>
                 </div>
               )}
             </CardContent>
-            <br />
-            <br />
-            <CardFooter>
-              <Button type="submit" disabled={isConnecting || !ipAddress} className="w-full">
+            <CardFooter className="pt-2">
+              <Button type="submit" disabled={isConnecting || !ipAddress} className="w-full h-11 text-base font-medium shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all active:scale-[0.98]">
                 {isConnecting ? (
-                  <RefreshCw className="mr-2 size-4 animate-spin" />
+                  <RefreshCw className="mr-2 size-5 animate-spin" />
                 ) : (
-                  <Wifi className="mr-2 size-4" />
+                  <Wifi className="mr-2 size-5" />
                 )}
                 {isConnecting ? "Connecting..." : "Connect Device"}
               </Button>
@@ -188,45 +192,64 @@ export function DevicesPage() {
           </form>
         </Card>
 
-        <Card>
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Plug className="size-5 text-muted-foreground" />
+              <div className="p-2 rounded-lg bg-orange-500/10">
+                <Plug className="size-5 text-orange-500" />
+              </div>
               Enable TCP/IP
             </CardTitle>
             <CardDescription>
               Switch a USB-connected device into Wireless mode.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 flex-1">
             {!selectedDevice ? (
-              <div className="flex items-center gap-2 p-3 rounded-md text-sm bg-orange-500/10 border border-orange-500/20 text-orange-600 dark:text-orange-400">
-                <AlertCircle className="size-4 shrink-0" />
-                Select a device first.
+              <div className="flex items-center gap-3 p-4 rounded-xl text-sm bg-orange-500/10 border border-orange-500/20 text-orange-600 dark:text-orange-400 animate-pulse">
+                <AlertCircle className="size-5 shrink-0" />
+                Select a device from the table first.
               </div>
             ) : (
-              <div className="p-4 rounded-lg bg-muted text-sm border">
-                Device: <strong className="font-mono ml-2">{selectedDevice.model}</strong>
-                <br />
-                Serial: <span className="font-mono text-muted-foreground ml-2">{selectedDevice.serial}</span>
-                <br />
-                Type: <span className="uppercase text-xs ml-2 font-bold px-1.5 py-0.5 rounded-sm bg-primary/10 text-primary">{selectedDevice.connection_type}</span>
+              <div className="p-4 rounded-xl bg-muted/40 text-sm border border-border/50 space-y-2 backdrop-blur-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Model</span>
+                  <strong className="font-mono text-foreground">{selectedDevice.model}</strong>
+                </div>
+                <div className="flex justify-between items-center border-t border-border/50 pt-2">
+                  <span className="text-muted-foreground">Serial</span>
+                  <span className="font-mono text-foreground">{selectedDevice.serial}</span>
+                </div>
+                <div className="flex justify-between items-center border-t border-border/50 pt-2">
+                  <span className="text-muted-foreground">Connection</span>
+                  <span className="uppercase text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/20">{selectedDevice.connection_type}</span>
+                </div>
               </div>
             )}
             {enableMessage && (
-              <div className={`p-3 rounded-md text-sm border ${enableMessage.type === "success" ? "bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400" : "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400"}`}>
-                {enableMessage.text}
+              <div className={`p-4 rounded-xl text-sm border animate-in fade-in slide-in-from-top-1 duration-300 ${enableMessage.type === "success" ? "bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400" : "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400"}`}>
+                <div className="flex items-center gap-2">
+                  {enableMessage.type === "success" ? <CheckCircle2 className="size-4" /> : <AlertCircle className="size-4" />}
+                  {enableMessage.text}
+                </div>
               </div>
             )}
+            <p className="text-xs text-muted-foreground leading-relaxed px-1">
+              This will restart the ADB daemon on port 5555 of the selected USB device.
+            </p>
           </CardContent>
-          <br />
-          <CardFooter className="flex gap-2">
+          <CardFooter className="flex gap-3 pt-2">
             <Button
               variant="default"
               onClick={handleEnableTcpip}
               disabled={!selectedDevice || isEnablingTcpip || selectedDevice?.connection_type === "wifi"}
-              className="flex-1"
+              className="flex-1 h-11 text-base font-medium shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-[0.98]"
             >
+              {isEnablingTcpip ? (
+                 <RefreshCw className="mr-2 size-5 animate-spin" />
+              ) : (
+                 <RefreshCw className="mr-2 size-5" />
+              )}
               {isEnablingTcpip ? "Enabling..." : "Restart in TCP Mode"}
             </Button>
             {selectedDevice && selectedDevice.connection_type === "wifi" && (
@@ -234,6 +257,7 @@ export function DevicesPage() {
                 variant="destructive"
                 onClick={() => handleDisconnect(selectedDevice.serial)}
                 disabled={isDisconnecting}
+                className="h-11 px-6 shadow-lg shadow-destructive/10 hover:shadow-destructive/20 active:scale-[0.98] transition-all"
               >
                 Disconnect
               </Button>
@@ -275,24 +299,25 @@ export function DevicesPage() {
       )}
 
       {/* Devices Table */}
-      <Card className="shadow-sm overflow-hidden">
+      <Card className="shadow-sm overflow-hidden border-border/50">
         <Table>
           <TableHeader className="bg-muted/30">
-            <TableRow>
-              <TableHead className="w-[50px]"></TableHead>
-              <TableHead>Serial</TableHead>
-              <TableHead>Model</TableHead>
-              <TableHead>Connection</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-[40px] px-2"></TableHead>
+              <TableHead className="px-2 py-2">Device Info</TableHead>
+              <TableHead className="px-2 py-2">Connection</TableHead>
+              <TableHead className="px-2 py-2">Status</TableHead>
+              <TableHead className="text-right px-4 py-2">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                  <RefreshCw className="size-5 animate-spin mx-auto mb-2" />
-                  Scanning for devices...
+                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <RefreshCw className="size-6 animate-spin text-primary/50" />
+                    <span className="text-xs font-medium uppercase tracking-wider">Scanning Network...</span>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : devices && devices.length > 0 ? (
@@ -300,77 +325,98 @@ export function DevicesPage() {
                 const isSelected = selectedDevice?.serial === device.serial;
                 const isWifi = device.connection_type === "wifi";
                 return (
-                  <TableRow key={device.serial} className={isSelected ? "bg-primary/5" : ""}>
-                    <TableCell>
+                  <TableRow key={device.serial} className={cn("group transition-colors", isSelected ? "bg-primary/[0.03] border-l-2 border-l-primary" : "")}>
+                    <TableCell className="px-2 py-1.5 text-center">
                       {isSelected ? (
-                        <CheckCircle2 className="size-4 text-green-500" />
+                        <div className="flex items-center justify-center">
+                          <CheckCircle2 className="size-4 text-green-500" />
+                        </div>
                       ) : (
-                        <XCircle className="size-4 text-muted-foreground/30" />
+                        <div className="flex items-center justify-center opacity-20 group-hover:opacity-40 transition-opacity">
+                          <Smartphone className="size-4" />
+                        </div>
                       )}
                     </TableCell>
-                    <TableCell className="font-mono text-xs">{device.serial}</TableCell>
-                    <TableCell className="font-medium">{device.model.replace(/_/g, " ")}</TableCell>
-                    <TableCell>
-                      <Badge variant={isWifi ? "secondary" : "outline"} className="gap-1">
-                        {isWifi ? <Wifi className="size-3" /> : <Usb className="size-3" />}
+                    <TableCell className="px-2 py-1.5">
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-sm leading-tight">{device.model.replace(/_/g, " ")}</span>
+                        <span className="font-mono text-[10px] text-muted-foreground opacity-70 uppercase">SN: {device.serial}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-2 py-1.5">
+                      <Badge variant={isWifi ? "secondary" : "outline"} className="h-5 px-1.5 text-[10px] gap-1 font-bold uppercase tracking-tighter">
+                        {isWifi ? <Wifi className="size-2.5" /> : <Usb className="size-2.5" />}
                         {isWifi ? "Wi-Fi" : "USB"}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={device.status === "device" ? "default" : "destructive"}
-                        className="text-xs"
-                      >
-                        {device.status === "device" ? "Online" : device.status}
-                      </Badge>
+                    <TableCell className="px-2 py-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <div className={cn("size-1.5 rounded-full", device.status === "device" ? "bg-green-500 animate-pulse" : "bg-red-500")} />
+                        <span className="text-[11px] font-medium uppercase tracking-tight text-muted-foreground">
+                          {device.status === "device" ? "Online" : device.status}
+                        </span>
+                      </div>
                     </TableCell>
-                    <TableCell className="text-right space-x-2">
-                      {!isSelected && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleSelect(device.serial)}
-                        >
-                          <Monitor className="size-3 mr-1" /> Select
-                        </Button>
-                      )}
-                      {isWifi && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDisconnect(device.serial)}
-                        >
-                          <Unplug className="size-3 mr-1" /> Disconnect
-                        </Button>
-                      )}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 px-3 text-xs w-full text-left">
-                          <Power className="size-3 mr-1" /> Reboot
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => rebootDevice({ serial: device.serial, mode: "" })}>
-                            System
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => rebootDevice({ serial: device.serial, mode: "recovery" })}>
-                            Recovery
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => rebootDevice({ serial: device.serial, mode: "bootloader" })}>
-                            Bootloader
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <TableCell className="text-right px-4 py-1.5">
+                      <div className="flex items-center justify-end gap-1">
+                        {!isSelected && (
+                          <Button 
+                            variant="default" 
+                            size="sm" 
+                            className="h-7 px-3 text-[11px] font-bold uppercase"
+                            onClick={() => handleSelect(device.serial)}
+                          >
+                            Select
+                          </Button>
+                        )}
+                        {isWifi && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDisconnect(device.serial)}
+                            disabled={isDisconnecting}
+                            title="Disconnect"
+                          >
+                            <Unplug className="size-3.5" />
+                          </Button>
+                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                            >
+                              <Power className="size-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-32">
+                             <div className="px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Reboot Mode</div>
+                             <DropdownMenuItem className="text-xs" onClick={() => rebootDevice({ serial: device.serial, mode: "" })}>
+                              System
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs" onClick={() => rebootDevice({ serial: device.serial, mode: "recovery" })}>
+                              Recovery
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs" onClick={() => rebootDevice({ serial: device.serial, mode: "bootloader" })}>
+                              Bootloader
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center">
-                  <Smartphone className="size-10 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-muted-foreground font-medium">No devices detected</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Connect a device via USB or wireless ADB
-                  </p>
+                <TableCell colSpan={5} className="h-32 text-center">
+                  <div className="flex flex-col items-center justify-center opacity-30 gap-1 mt-2">
+                    <Smartphone className="size-12 mb-2" />
+                    <p className="text-sm font-bold uppercase tracking-widest">No devices detected</p>
+                    <p className="text-[11px] font-medium max-w-[200px]">Connect via USB or wireless ADB to start management</p>
+                  </div>
                 </TableCell>
               </TableRow>
             )}

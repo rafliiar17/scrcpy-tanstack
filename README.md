@@ -43,32 +43,17 @@
 
 ## 📦 Packaging & Distribution
 
-### 🐧 Linux (AppImage / .deb)
+This project is configured with **GitHub Actions** to automate the building and packaging process for multiple platforms.
 
-To build for Linux, run the following command on a Linux machine:
+- **🐧 Linux**: Automated builds for `.deb`, `.rpm`, and `.AppImage`.
+- **🪟 Windows**: Automated builds for `.exe` (NSIS) and `.msi`.
 
-```bash
-bun run tauri build
-```
+See [.github/workflows/release.yml](.github/workflows/release.yml) for the build logic.
 
-The output will be located in `src-tauri/target/release/bundle/appimage/` and `deb/`.
+## 🗺️ Roadmap & History
 
-### 🪟 Windows (MSI / EXE)
-
-To build for Windows, run the following command on a Windows machine:
-
-```bash
-bun run tauri build
-```
-
-The output will be located in `src-tauri/target/release/bundle/msi/` and `nsis/`.
-
-> [!NOTE]
-> Cross-compilation (building Windows from Linux or vice versa) is possible with specialized tools like `xwin` or Docker, but it is highly recommended to build on the native OS for the most stable results.
-
-## 🗺️ Roadmap
-
-See [ROADMAP.md](./ROADMAP.md) for the future vision of ScrcpyGUI Pro.
+- [Roadmap](./ROADMAP.md): Future vision and planned features.
+- [Changelog](./CHANGELOG.md): History of changes and releases.
 
 ## 📄 License
 
