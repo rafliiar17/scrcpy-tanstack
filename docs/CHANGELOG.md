@@ -4,6 +4,20 @@ Semua perubahan penting pada proyek **ScrcpyGUI Pro** akan dicatat di sini. Form
 
 ---
 
+## [0.1.2] - 2026-03-27
+
+### ✨ Added
+- **Centralized Metadata**: Pengenalan `app.json` sebagai single source of truth untuk nama dan versi aplikasi yang sinkron antara Frontend dan Backend.
+- **Improved Linux Build Script**: Penambahan skrip `tauri:linux` yang secara otomatis menangani variabel lingkungan untuk build yang stabil di distro modern.
+
+### 🐛 Fixed
+- **Linux AppImage Bundling**: Perbaikan error `linuxdeploy` pada distro berbasis Arch (CachyOS) dengan menonaktifkan stripping binary (`NO_STRIP=1`) dan mengaktifkan ekstraksi AppImage (`APPIMAGE_EXTRACT_AND_RUN=1`).
+
+### 🔧 Technical
+- **Rust Backend Sync**: Integrasi konstanta `APP_NAME` dan `APP_VERSION` dalam Rust yang mengambil data langsung dari manifest proyek yang telah disinkronkan.
+
+---
+
 ## [0.1.1] - 2026-03-27
 
 ### ✨ Added

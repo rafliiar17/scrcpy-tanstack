@@ -43,6 +43,17 @@
    bun run tauri dev
    ```
 
+4. **Build for Production (Linux)**:
+   ```bash
+   bun run tauri:linux build
+   ```
+
+### 📂 Configuration Logic
+
+This project use a **Single Source of Truth** for application metadata:
+- [**app.json**](./app.json): Central config for `productName` and `version`.
+- Both **Frontend (TypeScript)** and **Backend (Rust)** automatically sync with this file during development and build.
+
 ### 📦 Packaging & Distribution
 
 This project is configured with **GitHub Actions** to automate the building and packaging process.
